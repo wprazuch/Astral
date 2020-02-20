@@ -7,6 +7,7 @@ class TiffSplitter():
     def __init__(self):
         pass
 
+
     def run(self, input_path, output_path):
         img = Image.open(input_path)
         for i in range (1200):
