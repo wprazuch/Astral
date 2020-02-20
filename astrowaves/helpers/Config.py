@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
+import os
 
 class Config():
 
-    def __init__(self, path : str = 'cfg\\cfg.xml'):
+    def __init__(self, path : str = os.path.join('cfg', 'cfg.xml')):
         tree = ET.parse(path)
         root = tree.getroot()
 

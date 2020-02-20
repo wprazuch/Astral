@@ -1,6 +1,6 @@
 <data>
-    <input_path>D:\Doktorat\Essen\Con_AN_2_4\</input_path>
+    <input_path>/Volumes/OTHERS/Doktorat/Essen/Con_AN_2_4/</input_path>
     <time_interval_ms>150</time_interval_ms>
 	<standard_deviation_threshold>1.5</standard_deviation_threshold>
-    <output_path>D:\Doktorat\Essen\outputs\1\</output_path>
+    <output_path>/Volumes/OTHERS/Doktorat/Essen/outputs/</output_path>
 </data>
