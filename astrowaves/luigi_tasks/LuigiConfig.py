@@ -3,7 +3,7 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import os
 
-class Config():
+class LuigiConfig():
 
     def __init__(self, path : str = os.path.join('cfg', 'cfg.xml')):
         tree = ET.parse(path)
@@ -13,8 +13,3 @@ class Config():
         self.time_interval_ms = int(root.find('time_interval_ms').text)
         self.std_threshold = float(root.find('standard_deviation_threshold').text)
         self.output_path = root.find('output_path').text
-        self.temp_path = root.find('temp_path').text
-
-
-
-
