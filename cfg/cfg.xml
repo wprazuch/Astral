@@ -1,7 +1,7 @@
 <data>
-    <input_path>C:\Users\Wojtek\Documents\Doktorat\Essen\Cont_AN_2_4.tif</input_path>
+    <input_path>C:\Users\Wojtek\Documents\Doktorat\Essen\tiff_files\Cont_AN_2_4.tif</input_path>
     <time_interval_ms>150</time_interval_ms>
 	<standard_deviation_threshold>1.5</standard_deviation_threshold>
-    <output_path>C:\Users\Wojtek\Documents\Doktorat\Essen\Luigi\Tests\Con_AN_2_4_images</output_path>
+    <output_path>C:\Users\Wojtek\Documents\Doktorat\Essen\Luigi\Tests\Cont_AN_2_4_images</output_path>
     <temp_path>C:\Users\Wojtek\Documents\Doktorat\Essen\Luigi\Tests\temp\</temp_path>
 </data>
