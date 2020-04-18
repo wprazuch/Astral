@@ -16,6 +16,8 @@ class CalciumWaveDetector():
             calcium_wave = self.region_grow(waves, wave_inds[0])
             calcium_waves.append(calcium_wave)
             wave_inds = np.argwhere(waves == 255)
+        
+        return calcium_waves
 
     def region_grow(self, vol, start_point):
 
@@ -90,6 +92,12 @@ if __name__ == '__main__':
 
     #wave_inds = np.argwhere(waves == 255)
 
-    detector.run(waves)
+    waves_inds = detector.run(waves)
+
+    import pickle
+
+    with open(os.path.join(debug_path, 'waves_inds.pck'), 'wb') as file:
+        pickle.dump(waves_inds, file)
+    
 
     #seg = region_grow(waves, wave_inds[2])
