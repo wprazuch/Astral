@@ -2,3 +2,6 @@
 /debug/debug_data/*
 /**/*.pyc
 /**/*-checkpoint.ipynb
+\notebooks\wojtek\*.ipynb
+data/**/*
+debug/**/*

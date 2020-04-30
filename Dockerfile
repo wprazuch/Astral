@@ -1,0 +1,33 @@
+FROM puckel/docker-airflow
+
+USER root
+
+RUN apt-get update && \
+      apt-get -y install sudo
+
+RUN useradd -m docker && echo "docker:docker" | chpasswd && adduser docker sudo
+
+RUN mkdir -p /install/lib/python3.7/site-packages
+ENV PYTHONPATH .:/install/lib/python3.7/site-packages
+RUN apt-get update &&\
+    apt-get install -y gcc &&\
+    rm -rf /var/lib/apt/lists/* &&\
+	apt-get update &&\
+	apt-get install -y libglib2.0-0 &&\
+	apt-get install -y libsm6 libxext6 libxrender-dev
+
+RUN mkdir -p /app && chown docker /app && mkdir -p /app/data
+WORKDIR /app
+
+ENV PYTHONPATH ./data:/install/lib/python3.7/site-packages
+
+COPY requirements.txt requirements.txt
+COPY docker/airflow.cfg /usr/local/airflow/airflow.cfg
+
+RUN pip install \
+    --no-cache-dir \
+    --prefix=/install \
+    --no-warn-script-location \
+    -r requirements.txt
+	
+

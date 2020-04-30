@@ -3,6 +3,8 @@ from PIL import Image
 import os
 from pathlib import Path
 
+from .CalciumWavesExtractor import CalciumWavesExtractor
+
 class TiffSplitter():
 
     def __init__(self, input_path=None, output_path=None):
@@ -29,3 +31,10 @@ class TiffSplitter():
     def __check_output_path(self):
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
+
+
+if __name__ == '__main__':
+    input_path = 'data/Cont_AN_2_4.tif'
+    output_path = 'data/output'
+    tiff_splitter = TiffSplitter()
+    tiff_splitter.run(input_path, output_path)

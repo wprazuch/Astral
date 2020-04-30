@@ -9,4 +9,4 @@ if __name__ == "__main__":
     waves = np.load(os.path.join(debug_path, 'waves_morph.npy'))
     timespace = np.load(os.path.join(debug_path, 'timespace.npy'))
 
-    anim_tools.create_timespace_wave_video(waves, timespace, output_video_path=debug_path, filename="result.mp4")
+    anim_tools.create_timespace_wave_video(waves, timespace, output_video_path=debug_path, filename="result_std1.mp4")

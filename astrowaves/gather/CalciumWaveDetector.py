@@ -1,13 +1,14 @@
 import numpy as np
 import os
 
+
 class CalciumWaveDetector():
 
     def __init__(self):
         pass
 
     def run(self, waves):
-        
+
         # get pixels of class 'wave'
         wave_inds = np.argwhere(waves == 255)
         calcium_waves = []
@@ -16,7 +17,7 @@ class CalciumWaveDetector():
             calcium_wave = self.region_grow(waves, wave_inds[0])
             calcium_waves.append(calcium_wave)
             wave_inds = np.argwhere(waves == 255)
-        
+
         return calcium_waves
 
     def region_grow(self, vol, start_point):
@@ -29,7 +30,7 @@ class CalciumWaveDetector():
         visited = []
 
         def enqueue(item):
-            items.insert(0,item)
+            items.insert(0, item)
 
         def dequeue():
             s = items.pop()
@@ -71,16 +72,17 @@ class CalciumWaveDetector():
             if z < sizez:
                 tvoxel = vol[z+1, x, y]
                 if tvoxel == 255:
-                    enqueue((z+1,x,y))
+                    enqueue((z+1, x, y))
                     vol[z+1, x, y] = 1
 
             if z > 0:
                 tvoxel = vol[z-1, x, y]
                 if tvoxel == 255:
-                    enqueue((z-1,x,y))
+                    enqueue((z-1, x, y))
                     vol[z-1, x, y] = 1
-                
+
         return visited
+
 
 if __name__ == '__main__':
 
@@ -98,6 +100,5 @@ if __name__ == '__main__':
 
     with open(os.path.join(debug_path, 'waves_inds.pck'), 'wb') as file:
         pickle.dump(waves_inds, file)
-    
 
     #seg = region_grow(waves, wave_inds[2])

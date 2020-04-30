@@ -1,7 +1,10 @@
+from astrowaves.data.DataLoader import DataLoader
+import astrowaves.animations.animation_tools as anim_tools
 import numpy as np
 from tqdm import tqdm
 import cv2
 import os
+
 
 class MaskGenerator():
 
@@ -20,7 +23,7 @@ class MaskGenerator():
         for i in tqdm(range(waves.shape[0])):
             for j in range(waves.shape[1]):
                 slic = waves[i, j, :]
-                threshold = mean_pixels[i, j] + 2.5 * std_pixels[i, j]
+                threshold = mean_pixels[i, j] + 1.0 * std_pixels[i, j]
                 slic[slic > threshold] = 255
                 slic[slic <= threshold] = 0
                 waves_detected[i, j, :] = slic
@@ -40,8 +43,6 @@ class MaskGenerator():
             waves_morph[:, :, i] = mask
         return waves_morph
 
-from astrowaves.data.DataLoader import DataLoader
-import astrowaves.animations.animation_tools as anim_tools
 
 if __name__ == "__main__":
 
@@ -59,8 +60,6 @@ if __name__ == "__main__":
 
     waves_morph = mask_generator.perform_morphological_operations(waves_threshold)
 
-    anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph.mp4')
+    anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph_std1.mp4')
 
     np.save(os.path.join(debug_path, "waves_morph.npy"), waves_morph)
-    
-
