@@ -9,8 +9,10 @@ path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\t
 rel_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\segmentation_relative.h5'
 abs_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\segmentation_absolute.h5'
 dims_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\segmentation_dims.h5'
+waves_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\waves_morph.npy'
 
 timespace = np.load(path)
+#waves = np.load(waves_path)
 rel = pd.read_hdf(rel_path)
 abss = pd.read_hdf(abs_path)
 dims = pd.read_hdf(dims_path)
@@ -18,40 +20,35 @@ dims = dims.astype('int')
 
 t_dims = timespace.shape
 
-x_range = st.slider("X range", 1, t_dims[1], (1, t_dims[1]))
-y_range = st.slider("Y range", 1, t_dims[0], (1, t_dims[0]))
-z_range = st.slider("Z range", 1, t_dims[2], (1, t_dims[2]))
+x_range = st.sidebar.slider("X range", 1, t_dims[1], (1, t_dims[1]))
+y_range = st.sidebar.slider("Y range", 1, t_dims[0], (1, t_dims[0]))
+z_range = st.sidebar.slider("Z range", 1, t_dims[2], (1, t_dims[2]))
 
 dims = dims.loc[(dims['center_x'] > x_range[0]) & (dims['center_x'] < x_range[1])]
 dims = dims.loc[(dims['center_y'] > y_range[0]) & (dims['center_y'] < y_range[1])]
 dims = dims.loc[(dims['center_z'] > z_range[0]) & (dims['center_z'] < z_range[1])]
 
-st.write(dims)
+display_dims = dims.iloc[:, 1:]
+st.subheader(f'Found {display_dims.shape[0]} instances.')
+st.write(display_dims)
 
-which_slice = st.slider("Select a slice of a timespace: ", min_value=1, max_value=1200)
+#which_slice = st.slider("Select a slice of a timespace: ", min_value=1, max_value=1200)
+
+which_slice = st.number_input("Select a slice of a timespace: ", min_value=1, max_value=1200, step=1)
+
 active_frame = timespace[:, :, which_slice-1]
+#active_waves = waves[:, :, which_slice-1]
+
 fig = px.imshow(active_frame, color_continuous_scale='gray')
+#fig_waves = px.imshow(active_waves, color_continuous_scale='gray')
 points = dims.loc[dims['center_z'] == which_slice]
-
-# fig.add_trace(px.scatter(points,
-#                          x=points['center_x'],
-#                          y=points['center_y'],
-#                          hover_data=['id']))
-
-# fig.add_trace(go.Scatter(points,
-#                          x=points['center_x'],
-#                          y=points['center_y'],
-#                          marker=dict(color='red', size=4),
-#                          hover_data=['id']))
-
-# fig2 = px.scatter(points, x="center_x", y="center_y",
-#                   hover_name="id")
 
 fig2 = go.Scatter(x=points['center_x'], y=points['center_y'], mode='markers', text=points['id'])
 
 fig.add_trace(fig2)
-
+# fig_waves.add_trace(fig2)
 st.write(fig)
+# st.write(fig_waves)
 
 
 def scatter_3d(df):

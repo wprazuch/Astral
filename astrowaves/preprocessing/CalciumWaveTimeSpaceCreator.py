@@ -20,7 +20,8 @@ class CalciumWaveTimeSpaceCreator():
         if path_to_image_sequence is not None:
             self.path_to_image_sequence = path_to_image_sequence
 
-        slices = [slic for slic in os.listdir(path_to_image_sequence) if slic.endswith('.tif') and not slic.startswith('.')]
+        slices = [slic for slic in os.listdir(path_to_image_sequence)
+                  if slic.endswith('.tif') and not slic.startswith('.')]
         slices.sort(key=lambda f: int(re.sub('\D', '', f)))
         no_slices = len(slices)
         logging.info("Detected {} image slices".format(no_slices))
@@ -30,7 +31,6 @@ class CalciumWaveTimeSpaceCreator():
         image_matrix = np.ndarray(shape=img_shape+(no_slices,), dtype='int16')
         logging.info("Merging images into 3d representation...")
         for i, slic in enumerate(tqdm(slices)):
-            image_matrix[:, : , i] = plt.imread(os.path.join(path_to_image_sequence, slices[i]))
+            image_matrix[:, :, i] = plt.imread(os.path.join(path_to_image_sequence, slices[i]))
         logging.info("Done.")
         return image_matrix
-
