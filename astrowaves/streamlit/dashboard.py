@@ -5,11 +5,11 @@ import plotly.graph_objects as go
 
 import streamlit as st
 
-path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\timespace.npy'
-rel_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\segmentation_relative.h5'
-abs_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\segmentation_absolute.h5'
-dims_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\segmentation_dims.h5'
-waves_path = r'C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector\debug\waves_morph.npy'
+path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\timespace.npy'
+rel_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\segmentation_relative.h5'
+abs_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\segmentation_absolute.h5'
+dims_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\segmentation_dims.h5'
+waves_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\waves_morph.npy'
 
 timespace = np.load(path)
 #waves = np.load(waves_path)
