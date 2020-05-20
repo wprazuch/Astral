@@ -4,6 +4,7 @@ from airflow import DAG
 # Operators; we need this to operate!
 from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
+from airflow.models import Variable
 # These args will get passed on to each operator
 # You can override them on a per-task basis during operator initialization
 default_args = {
@@ -30,26 +31,26 @@ default_args = {
     # 'trigger_rule': 'all_success'
 }
 dag = DAG(
-    'run_astrowaves_processing',
+    'run',
     default_args=default_args,
     description='A simple tutorial DAG',
     schedule_interval=timedelta(days=1),
 )
 
+filename = Variable.get("filename")
 # t1, t2 and t3 are examples of tasks created by instantiating operators
 t1 = BashOperator(
     task_id='split_tiffs',
-    bash_command='python -m astrowaves.preprocessing.TiffSplitter',
+    bash_command=f'python -m astrowaves.preprocessing.TiffSplitter --filename {filename}',
     dag=dag,
 )
 
-t2 = BashOperator(
-    task_id='sleep',
-    depends_on_past=False,
-    bash_command='sleep 5',
-    retries=3,
-    dag=dag,
-)
+# t2 = BashOperator(
+#     task_id='create_timespace',
+#     depends_on_past=False,
+#     bash_command=f'python -m astrowaves.preprocessing.CalciumWaveTimeSpaceCreator --input_dir image_sequence',
+#     dag=dag,
+# )
 dag.doc_md = __doc__
 
 t1.doc_md = """\
@@ -59,20 +60,5 @@ You can document your task using the attributes `doc_md` (markdown),
 rendered in the UI's Task Instance Details page.
 ![img](http://montcs.bloomu.edu/~bobmon/Semesters/2012-01/491/import%20soul.png)
 """
-templated_command = """
-{% for i in range(5) %}
-    echo "{{ ds }}"
-    echo "{{ macros.ds_add(ds, 7)}}"
-    echo "{{ params.my_param }}"
-{% endfor %}
-"""
-
-t3 = BashOperator(
-    task_id='templated',
-    depends_on_past=False,
-    bash_command=templated_command,
-    params={'my_param': 'Parameter I passed in'},
-    dag=dag,
-)
-
-t1 >> [t2, t3]
+t1
+# t1 >> t2

@@ -1,9 +1,16 @@
+from .CalciumWavesExtractor import CalciumWavesExtractor
 import numpy as np
 from PIL import Image
 import os
 from pathlib import Path
+import argparse
 
-from .CalciumWavesExtractor import CalciumWavesExtractor
+parser2 = argparse.ArgumentParser()
+parser2.add_argument('--filename', help='filename')
+args = parser2.parse_args()
+
+input_file = args.filename
+
 
 class TiffSplitter():
 
@@ -11,6 +18,7 @@ class TiffSplitter():
         self.input_path = input_path
         self.output_path = output_path
 
+    print(os.getcwd())
 
     def run(self, input_path=None, output_path=None):
         if input_path is not None:
@@ -21,10 +29,10 @@ class TiffSplitter():
         self.__check_output_path()
 
         img = Image.open(input_path)
-        for i in range (1200):
+        for i in range(1200):
             try:
                 img.seek(i)
-                img.save(os.path.join(output_path, 'image_%s.tif'%(i,)))
+                img.save(os.path.join(output_path, 'image_%s.tif' % (i,)))
             except EOFError:
                 return None
 
@@ -34,7 +42,7 @@ class TiffSplitter():
 
 
 if __name__ == '__main__':
-    input_path = 'data/Cont_AN_2_4.tif'
-    output_path = 'data/output'
+    input_path = os.path.join('/app/data/', input_file)
+    output_path = '/app/data/image_sequence'
     tiff_splitter = TiffSplitter()
     tiff_splitter.run(input_path, output_path)
