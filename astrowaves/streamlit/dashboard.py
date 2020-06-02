@@ -2,14 +2,18 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import os
 
 import streamlit as st
 
-path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\timespace.npy'
-rel_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\segmentation_relative.h5'
-abs_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\segmentation_absolute.h5'
-dims_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\segmentation_dims.h5'
-waves_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\debug\waves_morph.npy'
+main_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
+
+
+path = os.path.join(main_path, 'timespace.npy')
+rel_path = os.path.join(main_path, 'segmentation_relative.h5')
+abs_path = os.path.join(main_path, 'segmentation_absolute.h5')
+dims_path = os.path.join(main_path, 'segmentation_dims.h5')
+waves_path = os.path.join(main_path, 'waves_morph.npy')
 
 timespace = np.load(path)
 #waves = np.load(waves_path)

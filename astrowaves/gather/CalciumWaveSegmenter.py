@@ -16,7 +16,7 @@ class CalciumWaveSegmenter():
         indices_sorted = list(reversed(sorted(waves_inds.copy(), key=len)))
         indices_filtered_volume = list(filter(lambda x: len(x) > 200, indices_sorted))
 
-        data_dims = np.zeros(shape=(len(indices_filtered_volume), 7), dtype='int32')
+        data_dims = np.zeros(shape=(len(indices_filtered_volume), 10), dtype='int32')
 
         for i, indices in enumerate(indices_filtered_volume):
             max_x = max(indices, key=lambda x: x[0])[0]
@@ -25,6 +25,9 @@ class CalciumWaveSegmenter():
             min_y = min(indices, key=lambda x: x[1])[1]
             max_z = max(indices, key=lambda x: x[2])[2]
             min_z = min(indices, key=lambda x: x[2])[2]
+            center_x = np.mean([max_x, min_x])
+            center_y = np.mean([max_y, min_y])
+            center_z = np.mean([max_z, min_z])
 
             min_ind, max_ind = np.array((min_x, min_y, min_z)), np.array((max_x, max_y, max_z))
             roi_shape = max_ind - min_ind + [1, 1, 1]
@@ -36,7 +39,7 @@ class CalciumWaveSegmenter():
 
             color = np.ones((indices_shift.shape[0], 1), dtype='uint8')
 
-            dim_row = [i, min_x, max_x, min_y, max_y, min_z, max_z]
+            dim_row = [i, min_x, max_x, min_y, max_y, min_z, max_z, center_x, center_y, center_z]
             data_dims[i, 0] = i
             data_dims[i, 1] = min_x
             data_dims[i, 2] = max_x
@@ -44,6 +47,9 @@ class CalciumWaveSegmenter():
             data_dims[i, 4] = max_y
             data_dims[i, 5] = min_z
             data_dims[i, 6] = max_z
+            data_dims[i, 7] = center_x
+            data_dims[i, 8] = center_y
+            data_dims[i, 9] = center_z
 
             for index, ref_index in zip(indices_shift, indices):
                 x, y, z = index
@@ -64,7 +70,7 @@ class CalciumWaveSegmenter():
             data_absolute = data_absolute.astype('int32')
 
         abs_cols = ['id', 'y', 'x', 'z', 'color']
-        dims_cols = ['id', 'y_min', 'y_max', 'x_min', 'x_max', 'z_min', 'z_max']
+        dims_cols = ['id', 'y_min', 'y_max', 'x_min', 'x_max', 'z_min', 'z_max', 'center_x', 'center_y', 'center_z']
 
         rel = pd.DataFrame(columns=abs_cols, data=data_relative)
         abs = pd.DataFrame(columns=abs_cols, data=data_absolute)
@@ -75,19 +81,20 @@ class CalciumWaveSegmenter():
 
 if __name__ == '__main__':
 
-    debug_path = 'C:\\Users\\Wojtek\\Documents\\Doktorat\\AstrocyteCalciumWaveDetector\\debug'
+    debug_path = '/app/data/output_data'
+    #debug_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
 
     timespace = np.load(os.path.join(debug_path, 'waves.npy'))
 
-    with open('debug\\waves_inds.pck', 'rb') as f:
+    with open(os.path.join(debug_path, 'waves_inds.pck'), 'rb') as f:
         waves_inds = pickle.load(f)
 
     segmenter = CalciumWaveSegmenter()
 
     abs, rel, dims = segmenter.run(waves_inds, timespace)
 
-    rel.to_hdf('debug\\segmentation_relative.h5', key='df')
-    abs.to_hdf('debug\\segmentation_absolute.h5', key='df')
-    dims.to_hdf('debug\\segmentation_dims.h5', key='df')
+    rel.to_hdf(os.path.join(debug_path, 'segmentation_relative.h5'), key='df')
+    abs.to_hdf(os.path.join(debug_path, 'segmentation_absolute.h5'), key='df')
+    dims.to_hdf(os.path.join(debug_path, 'segmentation_dims.h5'), key='df')
 
     print('Done')

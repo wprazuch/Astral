@@ -45,12 +45,41 @@ t1 = BashOperator(
     dag=dag,
 )
 
-# t2 = BashOperator(
-#     task_id='create_timespace',
-#     depends_on_past=False,
-#     bash_command=f'python -m astrowaves.preprocessing.CalciumWaveTimeSpaceCreator --input_dir image_sequence',
-#     dag=dag,
-# )
+t2 = BashOperator(
+    task_id='create_timespace',
+    depends_on_past=False,
+    bash_command=f'python -m astrowaves.preprocessing.CalciumWaveTimeSpaceCreator --input_dir image_sequence',
+    dag=dag,
+)
+
+t3 = BashOperator(
+    task_id='extract_waves',
+    depends_on_past=False,
+    bash_command=f'python -m astrowaves.preprocessing.CalciumWavesExtractor',
+    dag=dag,
+)
+
+t4 = BashOperator(
+    task_id='create_masks',
+    depends_on_past=False,
+    bash_command=f'python -m astrowaves.preprocessing.MaskGenerator',
+    dag=dag,
+)
+
+t5 = BashOperator(
+    task_id='detect_waves',
+    depends_on_past=False,
+    bash_command=f'python -m astrowaves.gather.CalciumWaveDetector',
+    dag=dag,
+)
+
+t6 = BashOperator(
+    task_id='segment_waves',
+    depends_on_past=False,
+    bash_command=f'python -m astrowaves.gather.CalciumWaveSegmenter',
+    dag=dag,
+)
+
 dag.doc_md = __doc__
 
 t1.doc_md = """\
@@ -60,5 +89,5 @@ You can document your task using the attributes `doc_md` (markdown),
 rendered in the UI's Task Instance Details page.
 ![img](http://montcs.bloomu.edu/~bobmon/Semesters/2012-01/491/import%20soul.png)
 """
-t1
-# t1 >> t2
+
+t1 >> t2 >> t3 >> t4 >> t5 >> t6

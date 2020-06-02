@@ -23,3 +23,14 @@ class CalciumWavesExtractor():
         waves_norm = waves_norm.astype('uint8')
 
         return waves_norm
+
+
+def __main__():
+    cwe = CalciumWavesExtractor()
+    timespace = np.load('/app/data/output_data/timespace.npy')
+    waves = cwe.run(timespace)
+    np.save('/app/data/output_data/waves.npy', waves)
+
+
+if __name__ == '__main__':
+    __main__()

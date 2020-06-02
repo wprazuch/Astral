@@ -10,12 +10,6 @@ import argparse
 
 logging.basicConfig(level=logging.INFO)
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--input_dir', help='input path where images are stored')
-args = parser.parse_args()
-
-input_dir = args.input_dir
-
 
 class CalciumWaveTimeSpaceCreator():
 
@@ -43,9 +37,18 @@ class CalciumWaveTimeSpaceCreator():
         return image_matrix
 
 
-if __name__ == '__main__':
+def __main__():
+    parser = argparse.ArgumentParser(prog='timespacecreator')
+    parser.add_argument('--input_dir', help='input path where images are stored')
+    args = parser.parse_args()
+
+    input_dir = args.input_dir
     input_path = os.path.join('/app/data/', input_dir)
     output_path = '/app/data/output_data'
     ts_creator = CalciumWaveTimeSpaceCreator()
     timespace = ts_creator.run(input_path)
     np.save(os.path.join(output_path, 'timespace.npy'), timespace)
+
+
+if __name__ == '__main__':
+    __main__()

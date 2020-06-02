@@ -86,7 +86,7 @@ class CalciumWaveDetector():
 
 if __name__ == '__main__':
 
-    debug_path = 'C:\\Users\\Wojtek\\Documents\\Doktorat\\AstrocyteCalciumWaveDetector\\debug'
+    debug_path = '/app/data/output_data'
 
     waves = np.load(os.path.join(debug_path, "waves_morph.npy"))
 

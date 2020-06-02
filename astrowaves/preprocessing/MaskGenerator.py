@@ -44,22 +44,16 @@ class MaskGenerator():
         return waves_morph
 
 
-if __name__ == "__main__":
-
-    debug_path = 'C:\\Users\\Wojtek\\Documents\\Doktorat\\AstrocyteCalciumWaveDetector\\debug'
-
-    data_loader = DataLoader()
-
-    waves = data_loader.load_waves()
-
+def __main__():
     mask_generator = MaskGenerator()
-
+    waves = np.load('/app/data/output_data/waves.npy')
     waves_threshold = mask_generator.perform_thresholding(waves)
-
-    anim_tools.visualize_waves(waves_threshold, filename='waves_thresh.mp4')
-
+    #anim_tools.visualize_waves(waves_threshold, filename='waves_thresh.mp4')
+    np.save('/app/data/output_data/waves.npy', waves)
     waves_morph = mask_generator.perform_morphological_operations(waves_threshold)
+    #anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph_std1.mp4')
+    np.save(os.path.join('/app/data/output_data/', "waves_morph.npy"), waves_morph)
 
-    anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph_std1.mp4')
 
-    np.save(os.path.join(debug_path, "waves_morph.npy"), waves_morph)
+if __name__ == '__main__':
+    __main__()

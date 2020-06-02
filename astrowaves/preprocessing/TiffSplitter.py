@@ -1,15 +1,8 @@
-from .CalciumWavesExtractor import CalciumWavesExtractor
 import numpy as np
 from PIL import Image
 import os
 from pathlib import Path
 import argparse
-
-parser2 = argparse.ArgumentParser()
-parser2.add_argument('--filename', help='filename')
-args = parser2.parse_args()
-
-input_file = args.filename
 
 
 class TiffSplitter():
@@ -41,8 +34,18 @@ class TiffSplitter():
             os.makedirs(self.output_path)
 
 
-if __name__ == '__main__':
+def __main__():
+    parser = argparse.ArgumentParser(prog='tiffsplitter')
+    parser.add_argument('-f', '--filename', help='filename to add')
+    args = parser.parse_args()
+
+    input_file = args.filename
+    print("Done")
     input_path = os.path.join('/app/data/', input_file)
     output_path = '/app/data/image_sequence'
     tiff_splitter = TiffSplitter()
     tiff_splitter.run(input_path, output_path)
+
+
+if __name__ == '__main__':
+    __main__()

@@ -5,4 +5,4 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - C:\Users\Wojtek\Documents\Doktorat\AstrocyteCalciumWaveDetector:/app/data
+      - C:\Users\Wojtek\Documents\Doktorat\Astral:/app
