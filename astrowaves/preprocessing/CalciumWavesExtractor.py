@@ -32,5 +32,14 @@ def __main__():
     np.save('/app/data/output_data/waves.npy', waves)
 
 
+def debug():
+    path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
+    cwe = CalciumWavesExtractor()
+    timespace = np.load(os.path.join(path, 'timespace.npy'))
+    waves = cwe.run(timespace)
+    np.save(os.path.join(path, 'waves.npy'))
+
+
 if __name__ == '__main__':
-    __main__()
+    # __main__()
+    debug()
