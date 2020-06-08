@@ -41,5 +41,5 @@ def debug():
 
 
 if __name__ == '__main__':
-    # __main__()
-    debug()
+    __main__()
+    # debug()

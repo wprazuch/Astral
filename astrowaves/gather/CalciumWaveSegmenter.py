@@ -35,9 +35,9 @@ class CalciumWaveSegmenter():
             indices_shift = indices.copy()
             indices_shift = indices_shift - min_ind
 
-            roi = np.zeros(shape=roi_shape, dtype='uint8')
+            roi = np.zeros(shape=roi_shape, dtype='uint16')
 
-            color = np.ones((indices_shift.shape[0], 1), dtype='uint8')
+            color = np.ones((indices_shift.shape[0], 1), dtype='uint16')
 
             dim_row = [i, min_x, max_x, min_y, max_y, min_z, max_z, center_x, center_y, center_z]
             data_dims[i, 0] = i
@@ -60,17 +60,17 @@ class CalciumWaveSegmenter():
                 x, y, z = index
                 color[j] = roi[x, y, z]
 
-            id = i * np.ones((indices_shift.shape[0], 1), dtype='uint8')
+            id = i * np.ones((indices_shift.shape[0], 1), dtype='uint16')
 
             data_r = np.concatenate([id, indices_shift, color], axis=1)
             data_a = np.concatenate([id, indices, color], axis=1)
             data_relative = np.concatenate([data_relative, data_r], axis=0)
-            data_relative = data_relative.astype('uint8')
+            data_relative = data_relative.astype('uint16')
             data_absolute = np.concatenate([data_absolute, data_a], axis=0)
             data_absolute = data_absolute.astype('int32')
 
         abs_cols = ['id', 'y', 'x', 'z', 'color']
-        dims_cols = ['id', 'y_min', 'y_max', 'x_min', 'x_max', 'z_min', 'z_max', 'center_x', 'center_y', 'center_z']
+        dims_cols = ['id', 'y_min', 'y_max', 'x_min', 'x_max', 'z_min', 'z_max', 'center_y', 'center_x', 'center_z']
 
         rel = pd.DataFrame(columns=abs_cols, data=data_relative)
         abs = pd.DataFrame(columns=abs_cols, data=data_absolute)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     debug_path = '/app/data/output_data'
     #debug_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
 
-    timespace = np.load(os.path.join(debug_path, 'waves.npy'))
+    timespace = np.load(os.path.join(debug_path, 'timespace.npy'))
 
     with open(os.path.join(debug_path, 'waves_inds.pck'), 'rb') as f:
         waves_inds = pickle.load(f)
