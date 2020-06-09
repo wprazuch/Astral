@@ -11,8 +11,10 @@ class CalciumWaveDetector():
     def __init__(self):
         pass
 
-    def _indices_label(self, array, label):
-        return np.argwhere(array == label)
+    def _indices_label(self, array, label, offset):
+        indices = np.argwhere(array == label)
+        indices = [np.concatenate([elem[:-1], [elem[-1] + offset]]) for elem in indices]
+        return indices
 
     def run(self, waves):
         waves_labelled = measure.label(waves, connectivity=3).astype('uint16')
@@ -38,19 +40,16 @@ class CalciumWaveDetector():
 
         for index in tqdm(range(len(out) - 1)):
             current = waves[:, :, out[index]:out[index + 1]]
-            print(out[index + 1])
             labelled = measure.label(current, connectivity=3).astype('uint16')
             last_slice = index
             uniq, counts = np.unique(labelled, return_counts=True)
             labels = uniq[1:]
             counts = counts[1:]
-            print(len(labels))
-            print(len(counts))
             label_counts = list(zip(labels, counts))
             count_filtered = list(filter(lambda x: x[1] > 30, label_counts))
             labels, counts = zip(*count_filtered)
             object_cords = Parallel(n_jobs=3, verbose=10)(delayed(self._indices_label)
-                                                          (labelled, label) for label in labels)
+                                                          (labelled, label, out[index]) for label in labels)
             total.extend(object_cords)
         return total
 

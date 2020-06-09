@@ -50,13 +50,15 @@ dims = dims.astype('int')
 
 t_dims = timespace.shape
 
+no_shapes = dims.shape[0]
+
 x_range = st.sidebar.slider("X range", 1, t_dims[1], (1, t_dims[1]))
 y_range = st.sidebar.slider("Y range", 1, t_dims[0], (1, t_dims[0]))
 z_range = st.sidebar.slider("Z range", 1, t_dims[2], (1, t_dims[2]))
 
-#dims = dims.loc[(dims['center_x'] > x_range[0]) & (dims['center_x'] < x_range[1])]
-#dims = dims.loc[(dims['center_y'] > y_range[0]) & (dims['center_y'] < y_range[1])]
-#dims = dims.loc[(dims['center_z'] > z_range[0]) & (dims['center_z'] < z_range[1])]
+dims = dims.loc[(dims['center_x'] > x_range[0]) & (dims['center_x'] < x_range[1])]
+dims = dims.loc[(dims['center_y'] > y_range[0]) & (dims['center_y'] < y_range[1])]
+dims = dims.loc[(dims['center_z'] > z_range[0]) & (dims['center_z'] < z_range[1])]
 
 display_dims = dims.iloc[:, 1:]
 st.subheader(f'Found {display_dims.shape[0]} instances.')
@@ -71,7 +73,7 @@ active_frame = timespace[:, :, which_slice - 1]
 plot_annotated_timespace(active_frame, dims)
 
 
-shape_id = st.number_input("Select id of the shape: ", min_value=1, max_value=dims.shape[0], step=1)
+shape_id = st.number_input("Select id of the shape: ", min_value=1, max_value=no_shapes, step=1)
 shape1 = rel.loc[rel['id'] == shape_id]
 fig3d = scatter_3d(shape1)
 st.write(fig3d)
@@ -86,6 +88,8 @@ img = timespace[min_y:max_y, min_x:max_x, min_z:max_z]
 segmentation[segmentation == 255] = 1
 sitk_img = sitk.GetImageFromArray(img)
 sitk_mask = sitk.GetImageFromArray(segmentation)
+
+st.write(np.unique(segmentation))
 
 rs = RadiomicsShape(sitk_img, sitk_mask)
 sv_ratio = rs.getSurfaceVolumeRatioFeatureValue()
