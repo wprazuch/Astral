@@ -89,8 +89,6 @@ segmentation[segmentation == 255] = 1
 sitk_img = sitk.GetImageFromArray(img)
 sitk_mask = sitk.GetImageFromArray(segmentation)
 
-st.write(np.unique(segmentation))
-
 rs = RadiomicsShape(sitk_img, sitk_mask)
 sv_ratio = rs.getSurfaceVolumeRatioFeatureValue()
 sphericity = rs.getSphericityFeatureValue()
