@@ -4,6 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import cv2
 import os
+import argparse
 
 
 class MaskGenerator():
@@ -14,7 +15,7 @@ class MaskGenerator():
     def run(self, waves):
         pass
 
-    def perform_thresholding(self, waves):
+    def perform_thresholding(self, waves, st_dev):
 
         mean_pixels = np.mean(waves, axis=2)
         std_pixels = np.std(waves, axis=2)
@@ -23,7 +24,7 @@ class MaskGenerator():
         for i in tqdm(range(waves.shape[0])):
             for j in range(waves.shape[1]):
                 slic = waves[i, j, :]
-                threshold = mean_pixels[i, j] + 1.0 * std_pixels[i, j]
+                threshold = mean_pixels[i, j] + st_dev * std_pixels[i, j]
                 slic[slic > threshold] = 255
                 slic[slic <= threshold] = 0
                 waves_detected[i, j, :] = slic
@@ -45,9 +46,14 @@ class MaskGenerator():
 
 
 def __main__():
+    parser = argparse.ArgumentParser(prog='timespacecreator')
+    parser.add_argument('--std', help='standard deviation for thresholding')
+    args = parser.parse_args()
+    std = args.std
+
     mask_generator = MaskGenerator()
     waves = np.load('/app/data/output_data/waves.npy')
-    waves_threshold = mask_generator.perform_thresholding(waves)
+    waves_threshold = mask_generator.perform_thresholding(waves, float(std))
     #anim_tools.visualize_waves(waves_threshold, filename='waves_thresh.mp4')
     np.save('/app/data/output_data/waves.npy', waves)
     waves_morph = mask_generator.perform_morphological_operations(waves_threshold)

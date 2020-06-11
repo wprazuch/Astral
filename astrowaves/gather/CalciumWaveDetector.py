@@ -4,6 +4,7 @@ import skimage
 from skimage import measure
 from joblib import Parallel, delayed
 from tqdm import tqdm
+import argparse
 
 
 class CalciumWaveDetector():
@@ -28,7 +29,7 @@ class CalciumWaveDetector():
                                                       (waves_labelled, label) for label in labels)
         return object_cords
 
-    def run2(self, waves):
+    def run2(self, waves, volume_threshold):
         slices = [slic for slic in range(waves.shape[2]) if not np.any(waves[:, :, slic])]
         length = waves.shape[2]
         to_slice = [int(length / 4), int(length / 2), int(3 * length / 4)]
@@ -46,7 +47,7 @@ class CalciumWaveDetector():
             labels = uniq[1:]
             counts = counts[1:]
             label_counts = list(zip(labels, counts))
-            count_filtered = list(filter(lambda x: x[1] > 30, label_counts))
+            count_filtered = list(filter(lambda x: x[1] > volume_threshold, label_counts))
             labels, counts = zip(*count_filtered)
             object_cords = Parallel(n_jobs=3, verbose=10)(delayed(self._indices_label)
                                                           (labelled, label, out[index]) for label in labels)
@@ -67,10 +68,14 @@ def debug():
 
 def main():
     debug_path = '/app/data/output_data'
+    parser = argparse.ArgumentParser(prog='timespacecreator')
+    parser.add_argument('--volume_threshold', help='standard deviation for thresholding')
+    args = parser.parse_args()
+    volume_threshold = args.volume_threshold
 
     waves = np.load(os.path.join(debug_path, "waves_morph.npy"))
     detector = CalciumWaveDetector()
-    waves_inds = detector.run2(waves)
+    waves_inds = detector.run2(waves, int(volume_threshold))
     import pickle
 
     with open(os.path.join(debug_path, 'waves_inds.pck'), 'wb') as file:

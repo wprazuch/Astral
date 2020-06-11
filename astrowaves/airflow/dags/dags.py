@@ -52,6 +52,7 @@ t2 = BashOperator(
     dag=dag,
 )
 
+
 t3 = BashOperator(
     task_id='extract_waves',
     depends_on_past=False,
@@ -59,17 +60,19 @@ t3 = BashOperator(
     dag=dag,
 )
 
+standard_deviation_threshold = Variable.get("standard_deviation_threshold")
 t4 = BashOperator(
     task_id='create_masks',
     depends_on_past=False,
-    bash_command=f'python -m astrowaves.preprocessing.MaskGenerator',
+    bash_command=f'python -m astrowaves.preprocessing.MaskGenerator --std {standard_deviation_threshold}',
     dag=dag,
 )
 
+volume_threshold = Variable.get("volume_threshold")
 t5 = BashOperator(
     task_id='detect_waves',
     depends_on_past=False,
-    bash_command=f'python -m astrowaves.gather.CalciumWaveDetector',
+    bash_command=f'python -m astrowaves.gather.CalciumWaveDetector --volume_threshold {volume_threshold}',
     dag=dag,
 )
 

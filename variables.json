@@ -1,0 +1,5 @@
+{
+	"filename": "Cont_AN_2_4.tif",
+	"volume_threshold": 45,
+	"standard_deviation_threshold" : 1.2
+}
