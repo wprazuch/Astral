@@ -67,18 +67,21 @@ def debug():
 
 
 def main():
-    debug_path = '/app/data/output_data'
     parser = argparse.ArgumentParser(prog='timespacecreator')
     parser.add_argument('--volume_threshold', help='standard deviation for thresholding')
+    parser.add_argument('--directory', help='output_directory')
     args = parser.parse_args()
     volume_threshold = args.volume_threshold
+    directory = args.directory
 
-    waves = np.load(os.path.join(debug_path, "waves_morph.npy"))
+    path = os.path.join('/app/data/', directory)
+
+    waves = np.load(os.path.join(path, "waves_morph.npy"))
     detector = CalciumWaveDetector()
     waves_inds = detector.run2(waves, int(volume_threshold))
     import pickle
 
-    with open(os.path.join(debug_path, 'waves_inds.pck'), 'wb') as file:
+    with open(os.path.join(path, 'waves_inds.pck'), 'wb') as file:
         pickle.dump(waves_inds, file)
 
 

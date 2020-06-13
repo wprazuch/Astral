@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
+import os
 # These args will get passed on to each operator
 # You can override them on a per-task basis during operator initialization
 default_args = {
@@ -38,6 +39,8 @@ dag = DAG(
 )
 
 filename = Variable.get("filename")
+directory = filename.split('.')[0]
+
 # t1, t2 and t3 are examples of tasks created by instantiating operators
 t1 = BashOperator(
     task_id='split_tiffs',
@@ -48,7 +51,7 @@ t1 = BashOperator(
 t2 = BashOperator(
     task_id='create_timespace',
     depends_on_past=False,
-    bash_command=f'python -m astrowaves.preprocessing.CalciumWaveTimeSpaceCreator --input_dir image_sequence',
+    bash_command=f'python -m astrowaves.preprocessing.CalciumWaveTimeSpaceCreator --directory {directory}',
     dag=dag,
 )
 
@@ -56,7 +59,7 @@ t2 = BashOperator(
 t3 = BashOperator(
     task_id='extract_waves',
     depends_on_past=False,
-    bash_command=f'python -m astrowaves.preprocessing.CalciumWavesExtractor',
+    bash_command=f'python -m astrowaves.preprocessing.CalciumWavesExtractor --directory {directory}',
     dag=dag,
 )
 
@@ -64,7 +67,7 @@ standard_deviation_threshold = Variable.get("standard_deviation_threshold")
 t4 = BashOperator(
     task_id='create_masks',
     depends_on_past=False,
-    bash_command=f'python -m astrowaves.preprocessing.MaskGenerator --std {standard_deviation_threshold}',
+    bash_command=f'python -m astrowaves.preprocessing.MaskGenerator --std {standard_deviation_threshold} --directory {directory}',
     dag=dag,
 )
 
@@ -72,14 +75,14 @@ volume_threshold = Variable.get("volume_threshold")
 t5 = BashOperator(
     task_id='detect_waves',
     depends_on_past=False,
-    bash_command=f'python -m astrowaves.gather.CalciumWaveDetector --volume_threshold {volume_threshold}',
+    bash_command=f'python -m astrowaves.gather.CalciumWaveDetector --volume_threshold {volume_threshold} --directory {directory}',
     dag=dag,
 )
 
 t6 = BashOperator(
     task_id='segment_waves',
     depends_on_past=False,
-    bash_command=f'python -m astrowaves.gather.CalciumWaveSegmenter',
+    bash_command=f'python -m astrowaves.gather.CalciumWaveSegmenter --directory {directory}',
     dag=dag,
 )
 

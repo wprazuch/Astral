@@ -3,6 +3,7 @@ import numpy as np
 import os
 import logging
 from tqdm import tqdm
+import argparse
 
 
 class CalciumWavesExtractor():
@@ -28,19 +29,33 @@ class CalciumWavesExtractor():
 
 def __main__():
     cwe = CalciumWavesExtractor()
-    timespace = np.load('/app/data/output_data/timespace.npy')
+    path = '/app/data'
+    parser = argparse.ArgumentParser(prog='timespacecreator')
+    parser.add_argument('--directory', help='input path where images are stored')
+    args = parser.parse_args()
+    directory = args.directory
+    input_path = os.path.join(path, directory)
+    timespace = np.load(os.path.join(input_path, 'timespace.npy'))
     waves = cwe.run(timespace)
-    np.save('/app/data/output_data/waves.npy', waves)
+    np.save(input_path, 'waves.npy')
 
 
 def debug():
-    path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
+
+    parser = argparse.ArgumentParser(prog='timespacecreator')
+    parser.add_argument('--directory', help='input path where images are stored')
+    args = parser.parse_args()
+    directory = args.directory
+    path = '/app/data/'
+
+    input_path = os.path.join(path, directory)
+
     cwe = CalciumWavesExtractor()
-    timespace = np.load(os.path.join(path, 'timespace.npy'))
+    timespace = np.load(os.path.join(input_path, 'timespace.npy'))
     waves = cwe.run(timespace)
-    np.save(os.path.join(path, 'waves.npy'))
+    np.save(os.path.join(input_path, 'waves.npy'), waves)
 
 
 if __name__ == '__main__':
-    __main__()
-    # debug()
+    # __main__()
+    debug()

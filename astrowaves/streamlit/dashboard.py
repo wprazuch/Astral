@@ -8,7 +8,7 @@ import SimpleITK as sitk
 
 import streamlit as st
 
-main_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
+main_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AN_2_4'
 
 
 def plot_annotated_timespace(active_frame, dims):

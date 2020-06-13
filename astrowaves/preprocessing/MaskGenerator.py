@@ -46,19 +46,22 @@ class MaskGenerator():
 
 
 def __main__():
-    parser = argparse.ArgumentParser(prog='timespacecreator')
+    parser = argparse.ArgumentParser(prog='maskgenerator')
     parser.add_argument('--std', help='standard deviation for thresholding')
+    parser.add_argument('--directory', help='output_directory')
     args = parser.parse_args()
     std = args.std
+    directory = args.directory
+    path = os.path.join('/app/data/', directory)
 
     mask_generator = MaskGenerator()
-    waves = np.load('/app/data/output_data/waves.npy')
+    waves = np.load(os.path.join(path, 'waves.npy'))
     waves_threshold = mask_generator.perform_thresholding(waves, float(std))
-    #anim_tools.visualize_waves(waves_threshold, filename='waves_thresh.mp4')
-    np.save('/app/data/output_data/waves.npy', waves)
+    # anim_tools.visualize_waves(waves_threshold, filename='waves_thresh.mp4')
+    np.save(os.path.join(path, 'waves.npy'), waves_threshold)
     waves_morph = mask_generator.perform_morphological_operations(waves_threshold)
-    #anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph_std1.mp4')
-    np.save(os.path.join('/app/data/output_data/', "waves_morph.npy"), waves_morph)
+    # anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph_std1.mp4')
+    np.save(os.path.join(path, "waves_morph.npy"), waves_morph)
 
 
 if __name__ == '__main__':
