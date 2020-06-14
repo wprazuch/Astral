@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import pickle
+import argparse
 
 
 class CalciumWaveSegmenter():
@@ -81,20 +82,25 @@ class CalciumWaveSegmenter():
 
 if __name__ == '__main__':
 
-    debug_path = '/app/data/output_data'
+    parser = argparse.ArgumentParser(prog='Segmenter')
+    parser.add_argument('--directory', help='output_directory')
+    args = parser.parse_args()
+    directory = args.directory
+
+    path = os.path.join('/app/data/', directory)
     #debug_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
 
-    timespace = np.load(os.path.join(debug_path, 'timespace.npy'))
+    timespace = np.load(os.path.join(path, 'timespace.npy'))
 
-    with open(os.path.join(debug_path, 'waves_inds.pck'), 'rb') as f:
+    with open(os.path.join(path, 'waves_inds.pck'), 'rb') as f:
         waves_inds = pickle.load(f)
 
     segmenter = CalciumWaveSegmenter()
 
     abs, rel, dims = segmenter.run(waves_inds, timespace)
 
-    rel.to_hdf(os.path.join(debug_path, 'segmentation_relative.h5'), key='df')
-    abs.to_hdf(os.path.join(debug_path, 'segmentation_absolute.h5'), key='df')
-    dims.to_hdf(os.path.join(debug_path, 'segmentation_dims.h5'), key='df')
+    rel.to_hdf(os.path.join(path, 'segmentation_relative.h5'), key='df')
+    abs.to_hdf(os.path.join(path, 'segmentation_absolute.h5'), key='df')
+    dims.to_hdf(os.path.join(path, 'segmentation_dims.h5'), key='df')
 
     print('Done')

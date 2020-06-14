@@ -8,13 +8,16 @@ import SimpleITK as sitk
 
 import streamlit as st
 
-main_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
+main_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AN_2_4'
 
 
 def plot_annotated_timespace(active_frame, dims):
     fig = px.imshow(active_frame, color_continuous_scale='inferno')
     points = dims.loc[dims['center_z'] == which_slice]
-    fig2 = go.Scatter(x=points['center_x'], y=points['center_y'], mode='markers', text=points['id'])
+    fig2 = go.Scatter(x=points['center_x'], y=points['center_y'], mode='markers', text=points['id'], line=dict(
+        color='white',
+        width=2
+    ))
     fig.add_trace(fig2)
     st.write(fig)
 
@@ -35,42 +38,54 @@ def scatter_3d(df):
     return fig
 
 
-path = os.path.join(main_path, 'timespace.npy')
-rel_path = os.path.join(main_path, 'segmentation_relative.h5')
-abs_path = os.path.join(main_path, 'segmentation_absolute.h5')
-dims_path = os.path.join(main_path, 'segmentation_dims.h5')
-waves_path = os.path.join(main_path, 'waves_morph.npy')
+@st.cache(allow_output_mutation=True)
+def load_data(main_path):
+    timespace_path = os.path.join(main_path, 'timespace.npy')
+    rel_path = os.path.join(main_path, 'segmentation_relative.h5')
+    abs_path = os.path.join(main_path, 'segmentation_absolute.h5')
+    dims_path = os.path.join(main_path, 'segmentation_dims.h5')
+    waves_path = os.path.join(main_path, 'waves_morph.npy')
 
-timespace = np.load(path)
-waves = np.load(waves_path)
-rel = pd.read_hdf(rel_path)
-abss = pd.read_hdf(abs_path)
-dims = pd.read_hdf(dims_path)
-dims = dims.astype('int')
+    timespace = np.load(timespace_path)
+    waves = np.load(waves_path)
+    rel = pd.read_hdf(rel_path)
+    abss = pd.read_hdf(abs_path)
+    dims = pd.read_hdf(dims_path).astype('int')
+
+    return timespace, waves, rel, abss, dims
+
+
+def filter_dims_range(dims, x_range, y_range, z_range):
+    dims_new = dims.loc[(dims['center_x'] > x_range[0]) & (dims['center_x'] < x_range[1])]
+    dims_new = dims_new.loc[(dims['center_y'] > y_range[0]) & (dims['center_y'] < y_range[1])]
+    dims_new = dims_new.loc[(dims['center_z'] > z_range[0]) & (dims['center_z'] < z_range[1])]
+
+    return dims_new
+
+
+timespace, waves, rel, abss, dims = load_data(main_path)
+
 
 t_dims = timespace.shape
-
 no_shapes = dims.shape[0]
+
 
 x_range = st.sidebar.slider("X range", 1, t_dims[1], (1, t_dims[1]))
 y_range = st.sidebar.slider("Y range", 1, t_dims[0], (1, t_dims[0]))
 z_range = st.sidebar.slider("Z range", 1, t_dims[2], (1, t_dims[2]))
 
-dims = dims.loc[(dims['center_x'] > x_range[0]) & (dims['center_x'] < x_range[1])]
-dims = dims.loc[(dims['center_y'] > y_range[0]) & (dims['center_y'] < y_range[1])]
-dims = dims.loc[(dims['center_z'] > z_range[0]) & (dims['center_z'] < z_range[1])]
+dims_new = filter_dims_range(dims, x_range, y_range, z_range)
 
-display_dims = dims.iloc[:, 1:]
+display_dims = dims_new.iloc[:, 1:]
 st.subheader(f'Found {display_dims.shape[0]} instances.')
 st.write(display_dims)
 
-#which_slice = st.slider("Select a slice of a timespace: ", min_value=1, max_value=1200)
 
 which_slice = st.number_input("Select a slice of a timespace: ", min_value=1, max_value=1200, step=1)
 
 active_frame = timespace[:, :, which_slice - 1]
 
-plot_annotated_timespace(active_frame, dims)
+plot_annotated_timespace(active_frame, dims_new)
 
 
 shape_id = st.number_input("Select id of the shape: ", min_value=1, max_value=no_shapes, step=1)

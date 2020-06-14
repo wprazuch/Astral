@@ -39,12 +39,14 @@ class CalciumWaveTimeSpaceCreator():
 
 def __main__():
     parser = argparse.ArgumentParser(prog='timespacecreator')
-    parser.add_argument('--input_dir', help='input path where images are stored')
+    parser.add_argument('--directory', help='input path where images are stored')
     args = parser.parse_args()
+    directory = args.directory
 
-    input_dir = args.input_dir
-    input_path = os.path.join('/app/data/', input_dir)
-    output_path = '/app/data/output_data'
+    path = '/app/data/'
+    input_path = os.path.join(path, directory, 'image_sequence')
+    output_path = os.path.join(path, directory)
+
     ts_creator = CalciumWaveTimeSpaceCreator()
     timespace = ts_creator.run(input_path)
     np.save(os.path.join(output_path, 'timespace.npy'), timespace)

@@ -38,11 +38,14 @@ def __main__():
     parser = argparse.ArgumentParser(prog='tiffsplitter')
     parser.add_argument('-f', '--filename', help='filename to add')
     args = parser.parse_args()
-
     input_file = args.filename
-    print("Done")
+    directory = input_file.split('.')[0]
+    if not os.path.exists(f'app/data/{directory}'):
+        os.makedirs(f'app/data/{directory}')
+    path = r'/app/data'
     input_path = os.path.join('/app/data/', input_file)
-    output_path = '/app/data/image_sequence'
+    output_path = os.path.join(path, directory, 'image_sequence')
+
     tiff_splitter = TiffSplitter()
     tiff_splitter.run(input_path, output_path)
 
