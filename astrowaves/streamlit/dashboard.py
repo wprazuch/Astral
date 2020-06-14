@@ -14,7 +14,10 @@ main_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AN_2_4'
 def plot_annotated_timespace(active_frame, dims):
     fig = px.imshow(active_frame, color_continuous_scale='inferno')
     points = dims.loc[dims['center_z'] == which_slice]
-    fig2 = go.Scatter(x=points['center_x'], y=points['center_y'], mode='markers', text=points['id'])
+    fig2 = go.Scatter(x=points['center_x'], y=points['center_y'], mode='markers', text=points['id'], line=dict(
+        color='white',
+        width=2
+    ))
     fig.add_trace(fig2)
     st.write(fig)
 
