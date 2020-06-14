@@ -14,7 +14,7 @@ class CalciumWaveSegmenter():
         data_relative = np.ndarray(shape=(0, 5))
         data_absolute = np.ndarray(shape=(0, 5), dtype='int32')
 
-        indices_sorted = list(reversed(sorted(waves_inds.copy(), key=len)))
+        indices_sorted = list(reversed(sorted(waves_ind_list.copy(), key=len)))
         indices_filtered_volume = list(filter(lambda x: len(x) > 200, indices_sorted))
 
         data_dims = np.zeros(shape=(len(indices_filtered_volume), 10), dtype='int32')
@@ -80,16 +80,16 @@ class CalciumWaveSegmenter():
         return (abs, rel, dims)
 
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser(prog='Segmenter')
     parser.add_argument('--directory', help='output_directory')
+    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
+
     args = parser.parse_args()
     directory = args.directory
+    rootdir = args.rootdir
 
-    path = os.path.join('/app/data/', directory)
-    #debug_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\output_data'
-
+    path = os.path.join(rootdir, directory)
     timespace = np.load(os.path.join(path, 'timespace.npy'))
 
     with open(os.path.join(path, 'waves_inds.pck'), 'rb') as f:
@@ -104,3 +104,8 @@ if __name__ == '__main__':
     dims.to_hdf(os.path.join(path, 'segmentation_dims.h5'), key='df')
 
     print('Done')
+
+
+if __name__ == '__main__':
+
+    main()

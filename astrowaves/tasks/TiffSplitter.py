@@ -37,14 +37,17 @@ class TiffSplitter():
 def __main__():
     parser = argparse.ArgumentParser(prog='tiffsplitter')
     parser.add_argument('-f', '--filename', help='filename to add')
+    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
     args = parser.parse_args()
     input_file = args.filename
+    rootdir = args.rootdir
     directory = input_file.split('.')[0]
-    if not os.path.exists(f'app/data/{directory}'):
-        os.makedirs(f'app/data/{directory}')
-    path = r'/app/data'
-    input_path = os.path.join('/app/data/', input_file)
-    output_path = os.path.join(path, directory, 'image_sequence')
+
+    sequence_dir = os.path.join(rootdir, directory)
+    if not os.path.exists(sequence_dir):
+        os.makedirs(sequence_dir)
+    input_path = os.path.join(rootdir, input_file)
+    output_path = os.path.join(rootdir, directory, 'image_sequence')
 
     tiff_splitter = TiffSplitter()
     tiff_splitter.run(input_path, output_path)

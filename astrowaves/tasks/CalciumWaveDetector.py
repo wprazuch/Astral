@@ -70,7 +70,7 @@ def main():
     parser = argparse.ArgumentParser(prog='timespacecreator')
     parser.add_argument('--volume_threshold', help='standard deviation for thresholding')
     parser.add_argument('--directory', help='output_directory')
-    parser.add_argument('--rootdir', type=str, default='app/data', help='root directory of files')
+    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
     args = parser.parse_args()
     volume_threshold = args.volume_threshold
     directory = args.directory
