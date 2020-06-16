@@ -40,12 +40,13 @@ class CalciumWaveTimeSpaceCreator():
 def __main__():
     parser = argparse.ArgumentParser(prog='timespacecreator')
     parser.add_argument('--directory', help='input path where images are stored')
+    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
     args = parser.parse_args()
     directory = args.directory
+    rootdir = args.rootdir
 
-    path = '/app/data/'
-    input_path = os.path.join(path, directory, 'image_sequence')
-    output_path = os.path.join(path, directory)
+    input_path = os.path.join(rootdir, directory, 'image_sequence')
+    output_path = os.path.join(rootdir, directory)
 
     ts_creator = CalciumWaveTimeSpaceCreator()
     timespace = ts_creator.run(input_path)

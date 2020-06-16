@@ -1,3 +1,5 @@
+from .CalciumWaveDetector import CalciumWaveDetector
+from .CalciumWaveSegmenter import CalciumWaveSegmenter
 from .CalciumWaveTimeSpaceCreator import CalciumWaveTimeSpaceCreator
 from .CalciumWavesExtractor import CalciumWavesExtractor
 from .MaskGenerator import MaskGenerator

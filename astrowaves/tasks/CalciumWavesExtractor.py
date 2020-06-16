@@ -44,11 +44,12 @@ def debug():
 
     parser = argparse.ArgumentParser(prog='timespacecreator')
     parser.add_argument('--directory', help='input path where images are stored')
+    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
     args = parser.parse_args()
     directory = args.directory
-    path = '/app/data/'
+    rootdir = args.rootdir
 
-    input_path = os.path.join(path, directory)
+    input_path = os.path.join(rootdir, directory)
 
     cwe = CalciumWavesExtractor()
     timespace = np.load(os.path.join(input_path, 'timespace.npy'))

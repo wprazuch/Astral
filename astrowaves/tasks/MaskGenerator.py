@@ -49,10 +49,12 @@ def __main__():
     parser = argparse.ArgumentParser(prog='maskgenerator')
     parser.add_argument('--std', help='standard deviation for thresholding')
     parser.add_argument('--directory', help='output_directory')
+    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
     args = parser.parse_args()
     std = args.std
     directory = args.directory
-    path = os.path.join('/app/data/', directory)
+    rootdir = args.rootdir
+    path = os.path.join(rootdir, directory)
 
     mask_generator = MaskGenerator()
     waves = np.load(os.path.join(path, 'waves.npy'))
