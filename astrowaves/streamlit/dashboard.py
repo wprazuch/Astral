@@ -7,8 +7,20 @@ from radiomics.shape import RadiomicsShape
 import SimpleITK as sitk
 
 import streamlit as st
+import argparse
 
-main_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AN_2_4'
+parser = argparse.ArgumentParser()
+parser.add_argument('--path', help="Specify path to meta data")
+
+try:
+    args = parser.parse_args()
+except SystemExit as e:
+    # This exception will be raised if --help or invalid command line arguments
+    # are used. Currently streamlit prevents the program from exiting normally
+    # so we have to do a hard exit.
+    os._exit(e.code)
+
+main_path = args.path
 
 
 def plot_annotated_timespace(active_frame, dims):
@@ -107,6 +119,12 @@ sitk_mask = sitk.GetImageFromArray(segmentation)
 rs = RadiomicsShape(sitk_img, sitk_mask)
 sv_ratio = rs.getSurfaceVolumeRatioFeatureValue()
 sphericity = rs.getSphericityFeatureValue()
+max2ddiamrow = rs.getMaximum2DDiameterSliceFeatureValue()
+max2ddiamcol = rs.getMaximum2DDiameterColumnFeatureValue()
+max3ddiameter = rs.getMaximum3DDiameterFeatureValue()
 
 st.write(f"Surface to Volume Ratio: {sv_ratio:.2f}")
 st.write(f"Sphericity: {sphericity:.2f}")
+st.write(f"Maximum 2D Row Diameter: {max2ddiamrow:.2f}")
+st.write(f"Maximum 2D Column Diameter: {max2ddiamcol:.2f}")
+st.write(f"Maximum 3D Diameter: {max3ddiameter:.2f}")
