@@ -59,7 +59,7 @@ def load_data(main_path):
     waves_path = os.path.join(main_path, 'waves_morph.npy')
 
     timespace = np.load(timespace_path)
-    waves = np.load(waves_path)
+    waves = np.load(waves_path).astype('uint8')
     rel = pd.read_hdf(rel_path)
     abss = pd.read_hdf(abs_path)
     dims = pd.read_hdf(dims_path).astype('int')
