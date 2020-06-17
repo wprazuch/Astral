@@ -55,11 +55,20 @@ class CalciumWaveDetector():
         return total
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(prog='timespacecreator')
+    parser.add_argument('--volume_threshold', help='standard deviation for thresholding')
+    parser.add_argument('--directory', help='output_directory')
+    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
+    args = parser.parse_args()
+    return args
+
+
 def debug():
-    debug_path = '/app/data/output_data'
+    debug_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AN_2_4'
     waves = np.load(os.path.join(debug_path, "waves_morph.npy"))
     detector = CalciumWaveDetector()
-    waves_inds = detector.run(waves)
+    waves_inds = detector.run2(waves, 45)
     import pickle
 
     with open(os.path.join(debug_path, 'waves_inds.pck'), 'wb') as file:
@@ -67,11 +76,7 @@ def debug():
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='timespacecreator')
-    parser.add_argument('--volume_threshold', help='standard deviation for thresholding')
-    parser.add_argument('--directory', help='output_directory')
-    parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
-    args = parser.parse_args()
+    args = parse_args()
     volume_threshold = args.volume_threshold
     directory = args.directory
     rootdir = args.rootdir
@@ -88,5 +93,5 @@ def main():
 
 
 if __name__ == '__main__':
-
+    # debug()
     main()
