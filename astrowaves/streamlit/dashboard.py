@@ -86,7 +86,12 @@ x_range = st.sidebar.slider("X range", 1, t_dims[1], (1, t_dims[1]))
 y_range = st.sidebar.slider("Y range", 1, t_dims[0], (1, t_dims[0]))
 z_range = st.sidebar.slider("Z range", 1, t_dims[2], (1, t_dims[2]))
 
+
 dims_new = filter_dims_range(dims, x_range, y_range, z_range)
+
+if st.sidebar.button('Export CSV'):
+    dims_new.to_csv(os.path.join(main_path, 'astral_data.csv'))
+
 
 display_dims = dims_new.iloc[:, 1:]
 st.subheader(f'Found {display_dims.shape[0]} instances.')
