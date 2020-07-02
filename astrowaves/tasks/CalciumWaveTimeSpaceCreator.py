@@ -49,7 +49,7 @@ def __main__():
     output_path = os.path.join(rootdir, directory)
 
     ts_creator = CalciumWaveTimeSpaceCreator()
-    timespace = ts_creator.run(input_path)
+    timespace = ts_creator.run(input_path).astype('uint8')
     np.save(os.path.join(output_path, 'timespace.npy'), timespace)
 
 
