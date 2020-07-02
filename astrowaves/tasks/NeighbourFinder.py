@@ -232,7 +232,8 @@ def main():
     dims_df = pd.read_hdf(os.path.join(path, 'segmentation_dims.h5'))
     nfinder = NeighbourFinder()
     dict_df = nfinder.run(50, 100, absolute_df, dims_df)
-    dict_df.to_csv(os.path.join(path, 'neighbors.csv'))
+    dict_df = dict_df.sort_values(by=['shape_id_1'])
+    dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
 
 
 def debug():
@@ -247,7 +248,8 @@ def debug():
 
     nfinder = NeighbourFinder()
     dict_df = nfinder.run(50, 100, absolute_df, dims_df)
-    dict_df.to_csv(os.path.join(path, 'neighbors.csv'))
+    dict_df = dict_df.sort_values(by=['shape_id_1'])
+    dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
 
 
 if __name__ == '__main__':
