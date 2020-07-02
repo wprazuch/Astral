@@ -32,59 +32,77 @@ default_args = {
     # 'trigger_rule': 'all_success'
 }
 dag = DAG(
-    'run',
+    'extract_waves',
     default_args=default_args,
     description='A simple tutorial DAG',
     schedule_interval=timedelta(days=1),
 )
 
+rootdir = '/app/data'
+
 filename = Variable.get("filename")
-directory = filename.split('.')[0]
 
-# t1, t2 and t3 are examples of tasks created by instantiating operators
-t1 = BashOperator(
-    task_id='split_tiffs',
-    bash_command=f'python -m astrowaves.tasks.TiffSplitter --filename {filename}',
-    dag=dag,
-)
+if filename == 'all':
+    files = [file for file in os.listdir(rootdir) if file.endswith('.tif')]
+else:
+    files = [filename]
 
-t2 = BashOperator(
-    task_id='create_timespace',
-    depends_on_past=False,
-    bash_command=f'python -m astrowaves.tasks.CalciumWaveTimeSpaceCreator --directory {directory}',
-    dag=dag,
-)
+for file in files:
+    filename = file
+    directory = filename.split('.')[0]
 
+    # t1, t2 and t3 are examples of tasks created by instantiating operators
+    t1 = BashOperator(
+        task_id=f'split_tiffs_{directory}',
+        bash_command=f'python -m astrowaves.tasks.TiffSplitter --filename {filename}',
+        dag=dag,
+    )
 
-t3 = BashOperator(
-    task_id='extract_waves',
-    depends_on_past=False,
-    bash_command=f'python -m astrowaves.tasks.CalciumWavesExtractor --directory {directory}',
-    dag=dag,
-)
+    t2 = BashOperator(
+        task_id=f'create_timespace_{directory}',
+        depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.CalciumWaveTimeSpaceCreator --directory {directory}',
+        dag=dag,
+    )
 
-standard_deviation_threshold = Variable.get("standard_deviation_threshold")
-t4 = BashOperator(
-    task_id='create_masks',
-    depends_on_past=False,
-    bash_command=f'python -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory}',
-    dag=dag,
-)
+    t3 = BashOperator(
+        task_id=f'extract_waves_{directory}',
+        depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.CalciumWavesExtractor --directory {directory}',
+        dag=dag,
+    )
 
-volume_threshold = Variable.get("volume_threshold")
-t5 = BashOperator(
-    task_id='detect_waves',
-    depends_on_past=False,
-    bash_command=f'python -m astrowaves.tasks.CalciumWaveDetector --volume_threshold {volume_threshold} --directory {directory}',
-    dag=dag,
-)
+    standard_deviation_threshold = Variable.get("standard_deviation_threshold")
+    t4 = BashOperator(
+        task_id=f'create_masks_{directory}',
+        depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory}',
+        dag=dag,
+    )
 
-t6 = BashOperator(
-    task_id='segment_waves',
-    depends_on_past=False,
-    bash_command=f'python -m astrowaves.tasks.CalciumWaveSegmenter --directory {directory}',
-    dag=dag,
-)
+    volume_threshold = Variable.get("volume_threshold")
+    t5 = BashOperator(
+        task_id=f'detect_waves_{directory}',
+        depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.CalciumWaveDetector --volume_threshold {volume_threshold} --directory {directory}',
+        dag=dag,
+    )
+
+    t6 = BashOperator(
+        task_id=f'segment_waves_{directory}',
+        depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.CalciumWaveSegmenter --directory {directory}',
+        dag=dag,
+    )
+
+    t7 = BashOperator(
+        task_id=f'cleanup_{directory}',
+        depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.CleanupMetadata --directory {directory}',
+        dag=dag,
+    )
+
+    t1 >> t2 >> t3 >> t4 >> t5 >> t6 >> t7
 
 dag.doc_md = __doc__
 
@@ -95,5 +113,3 @@ You can document your task using the attributes `doc_md` (markdown),
 rendered in the UI's Task Instance Details page.
 ![img](http://montcs.bloomu.edu/~bobmon/Semesters/2012-01/491/import%20soul.png)
 """
-
-t1 >> t2 >> t3 >> t4 >> t5 >> t6
