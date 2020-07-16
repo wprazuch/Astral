@@ -25,17 +25,18 @@ class CalciumWaveDetector():
         label_counts = list(zip(labels, counts))
         count_filtered = list(filter(lambda x: x[1] > 30, label_counts))
         labels, counts = zip(*count_filtered)
-        object_cords = Parallel(n_jobs=3, verbose=10)(delayed(self._indices_label)
+        object_cords = Parallel(n_jobs=5, verbose=10)(delayed(self._indices_label)
                                                       (waves_labelled, label) for label in labels)
         return object_cords
 
     def run2(self, waves, volume_threshold):
         slices = [slic for slic in range(waves.shape[2]) if not np.any(waves[:, :, slic])]
         length = waves.shape[2]
-        to_slice = [int(length / 4), int(length / 2), int(3 * length / 4)]
+        to_slice = [i*50 for i in range(int(length/50))]
         def func(myList, myNumber): return min(myList, key=lambda x: abs(x - myNumber))
         out = list(map(lambda x: func(slices, x), to_slice))
-        out = [0, *out, length]
+        out = [*out, length]
+        out = sorted(list(set(out)))
 
         total = []
 
@@ -48,6 +49,8 @@ class CalciumWaveDetector():
             counts = counts[1:]
             label_counts = list(zip(labels, counts))
             count_filtered = list(filter(lambda x: x[1] > volume_threshold, label_counts))
+            if not count_filtered:
+                continue
             labels, counts = zip(*count_filtered)
             object_cords = Parallel(n_jobs=3, verbose=10)(delayed(self._indices_label)
                                                           (labelled, label, out[index]) for label in labels)

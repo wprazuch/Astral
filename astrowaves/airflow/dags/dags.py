@@ -11,7 +11,7 @@ import os
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': days_ago(2),
+    'start_date': days_ago(1),
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -51,17 +51,9 @@ for file in files:
     filename = file
     directory = filename.split('.')[0]
 
-    # t1, t2 and t3 are examples of tasks created by instantiating operators
     t1 = BashOperator(
-        task_id=f'split_tiffs_{directory}',
-        bash_command=f'python -m astrowaves.tasks.TiffSplitter --filename {filename}',
-        dag=dag,
-    )
-
-    t2 = BashOperator(
-        task_id=f'create_timespace_{directory}',
-        depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.CalciumWaveTimeSpaceCreator --directory {directory}',
+        task_id=f'create_timelapse_{directory}',
+        bash_command=f'python -m astrowaves.tasks.TimelapseCreator --filename {filename} --directory {directory}',
         dag=dag,
     )
 
@@ -102,7 +94,8 @@ for file in files:
         dag=dag,
     )
 
-    t1 >> t2 >> t3 >> t4 >> t5 >> t6 >> t7
+    # t1 >> t2 >> t3 >> t4 >> t5 >> t6 >> t7
+    t1 >> t3 >> t4 >> t5 >> t6 >> t7
 
 dag.doc_md = __doc__
 
