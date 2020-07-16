@@ -7,7 +7,7 @@ class CleanupMetadata():
 
     def run(self, directory):
         # shutil.rmtree(os.path.join(directory, 'image_sequence'))
-        # os.remove(os.path.join(directory, 'waves.npy'))
+        os.remove(os.path.join(directory, 'waves.npy'))
         os.remove(os.path.join(directory, 'waves_inds.pck'))
 
 

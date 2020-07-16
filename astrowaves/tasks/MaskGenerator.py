@@ -3,6 +3,7 @@ from tqdm import tqdm
 import cv2
 import os
 import argparse
+from skimage import io
 
 
 class MaskGenerator():
@@ -90,7 +91,11 @@ def main():
     # np.save(os.path.join(path, 'waves.npy'), waves)
     # waves = mask_generator.perform_morphological_operations(waves)
     # anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph_std1.mp4')
+
     np.save(os.path.join(path, "waves_morph.npy"), waves)
+    waves = waves.astype('uint8')
+    waves[waves > 0] = 255
+    io.imsave(os.path.join(path, 'black_and_white.tif'), waves)
 
 
 if __name__ == '__main__':
