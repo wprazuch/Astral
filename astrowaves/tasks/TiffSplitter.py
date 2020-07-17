@@ -22,7 +22,7 @@ class TiffSplitter():
         self.__check_output_path()
 
         img = Image.open(input_path)
-        for i in range(1200):
+        for i in range(img.n_frames):
             try:
                 img.seek(i)
                 img.save(os.path.join(output_path, 'image_%s.tif' % (i,)))

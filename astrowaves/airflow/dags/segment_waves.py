@@ -32,7 +32,7 @@ default_args = {
     # 'trigger_rule': 'all_success'
 }
 dag = DAG(
-    '1_extract_waves',
+    '2_segment_waves',
     default_args=default_args,
     description='A simple tutorial DAG',
     schedule_interval=timedelta(days=1),
@@ -52,33 +52,34 @@ for file in files:
     filename = file
     directory = filename.split('.')[0]
 
-    t1 = BashOperator(
-        task_id=f'create_timelapse_{directory}',
-        bash_command=f'python -m astrowaves.tasks.TimelapseCreator --filename {filename} --directory {directory}',
-        dag=dag,
-    )
-
-    t3 = BashOperator(
-        task_id=f'extract_waves_{directory}',
+    volume_threshold = Variable.get("volume_threshold")
+    t5 = BashOperator(
+        task_id=f'detect_waves_{directory}',
         depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.CalciumWavesExtractor --directory {directory}',
+        bash_command=f'python -m astrowaves.tasks.CalciumWaveDetector --volume_threshold {volume_threshold} --directory {directory}',
         dag=dag,
     )
 
-    standard_deviation_threshold = Variable.get("standard_deviation_threshold")
-    t4 = BashOperator(
-        task_id=f'create_masks_{directory}',
+    t6 = BashOperator(
+        task_id=f'segment_waves_{directory}',
         depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory}',
+        bash_command=f'python -m astrowaves.tasks.CalciumWaveSegmenter --directory {directory}',
         dag=dag,
     )
 
-    # t1 >> t2 >> t3 >> t4 >> t5 >> t6 >> t7
-    t1 >> t3 >> t4
+    t7 = BashOperator(
+        task_id=f'cleanup_{directory}',
+        depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.CleanupMetadata --directory {directory}',
+        dag=dag,
+    )
+
+    t5 >> t6 >> t7
+
 
 dag.doc_md = __doc__
 
-t1.doc_md = """\
+t5.doc_md = """\
 #### Task Documentation
 You can document your task using the attributes `doc_md` (markdown),
 `doc` (plain text), `doc_rst`, `doc_json`, `doc_yaml` which gets

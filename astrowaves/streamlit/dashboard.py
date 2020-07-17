@@ -109,27 +109,3 @@ shape_id = st.number_input("Select id of the shape: ", min_value=1, max_value=no
 shape1 = rel.loc[rel['id'] == shape_id]
 fig3d = scatter_3d(shape1)
 st.write(fig3d)
-
-abs_shape = abss.loc[abss['id'] == shape_id]
-min_x, min_y, min_z = abs_shape['x'].min(), abs_shape['y'].min(), abs_shape['z'].min()
-max_x, max_y, max_z = abs_shape['x'].max(), abs_shape['y'].max(), abs_shape['z'].max()
-
-segmentation = waves[min_y:max_y, min_x:max_x, min_z:max_z]
-img = timespace[min_y:max_y, min_x:max_x, min_z:max_z]
-
-segmentation[segmentation == 255] = 1
-sitk_img = sitk.GetImageFromArray(img)
-sitk_mask = sitk.GetImageFromArray(segmentation)
-
-rs = RadiomicsShape(sitk_img, sitk_mask)
-sv_ratio = rs.getSurfaceVolumeRatioFeatureValue()
-sphericity = rs.getSphericityFeatureValue()
-max2ddiamrow = rs.getMaximum2DDiameterSliceFeatureValue()
-max2ddiamcol = rs.getMaximum2DDiameterColumnFeatureValue()
-max3ddiameter = rs.getMaximum3DDiameterFeatureValue()
-
-st.write(f"Surface to Volume Ratio: {sv_ratio:.2f}")
-st.write(f"Sphericity: {sphericity:.2f}")
-st.write(f"Maximum 2D Row Diameter: {max2ddiamrow:.2f}")
-st.write(f"Maximum 2D Column Diameter: {max2ddiamcol:.2f}")
-st.write(f"Maximum 3D Diameter: {max3ddiameter:.2f}")

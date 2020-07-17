@@ -3,6 +3,7 @@ from tqdm import tqdm
 import cv2
 import os
 import argparse
+from skimage import io
 
 
 class MaskGenerator():
@@ -19,14 +20,12 @@ class MaskGenerator():
         std_pixels = np.std(waves, axis=2, dtype=np.float32)
         #waves_detected = np.zeros(waves.shape, dtype='uint8')
 
-        for i in tqdm(range(waves.shape[0])):
-            for j in range(waves.shape[1]):
-                slic = waves[i, j, :]
-                threshold = int(mean_pixels[i, j] + st_dev * std_pixels[i, j])
-                slic[slic > threshold] = 255
-                slic[slic <= threshold] = 0
+        threshold = (mean_pixels + st_dev * std_pixels).astype('uint8')
+        threshold = np.expand_dims(threshold, axis=-1)
 
-        print(np.unique(waves))
+        waves[waves > threshold] = 255
+        waves[waves <= threshold] = 0
+
         se1 = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 4))
         se2 = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 4))
 
@@ -78,7 +77,7 @@ def debug():
     np.save(os.path.join(path, "waves_morph.npy"), waves)
 
 
-def __main__():
+def main():
     args = parse_args()
     std = args.std
     directory = args.directory
@@ -92,9 +91,13 @@ def __main__():
     # np.save(os.path.join(path, 'waves.npy'), waves)
     # waves = mask_generator.perform_morphological_operations(waves)
     # anim_tools.visualize_waves(waves_morph, filename='waves_thresh_morph_std1.mp4')
+
     np.save(os.path.join(path, "waves_morph.npy"), waves)
+    waves = waves.astype('uint8')
+    waves[waves > 0] = 255
+    io.imsave(os.path.join(path, 'black_and_white.tif'), waves)
 
 
 if __name__ == '__main__':
-    __main__()
+    main()
     # debug()

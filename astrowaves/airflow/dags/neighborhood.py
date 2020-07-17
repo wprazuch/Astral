@@ -11,7 +11,7 @@ import os
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': days_ago(2),
+    'start_date': days_ago(1),
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -34,7 +34,7 @@ default_args = {
 
 
 dag = DAG(
-    'find_neighbours',
+    '3_find_neighbours',
     default_args=default_args,
     description='Find neighbouring waves in a timespace',
     schedule_interval=timedelta(days=1),
@@ -51,6 +51,7 @@ else:
 
 tolerance_xy = Variable.get("tolerance_xy")
 tolerance_z = Variable.get("tolerance_z")
+intersect_threshold = Variable.get("intersect_threshold")
 
 
 for file in files:
@@ -59,7 +60,19 @@ for file in files:
 
     # t1, t2 and t3 are examples of tasks created by instantiating operators
     t1 = BashOperator(
-        task_id=f'split_tiffs_{directory}',
+        task_id=f'find_neighbors_{directory}',
         bash_command=f'python -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_z {tolerance_z}',
         dag=dag,
     )
+
+    t2 = BashOperator(
+        task_id=f'find_repeats_{directory}',
+        bash_command=f'python -m astrowaves.tasks.RepeatsFinder --directory {directory} --intersect_threshold {intersect_threshold}',
+        dag=dag,)
+
+    t3 = BashOperator(
+        task_id=f'generate_csvs_{directory}',
+        bash_command=f'python -m astrowaves.tasks.MorphologyCreator --directory {directory}',
+        dag=dag,)
+
+    t1 >> t2 >> t3
