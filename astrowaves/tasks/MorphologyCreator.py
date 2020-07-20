@@ -22,7 +22,7 @@ class MorphologyCreator():
         abs_shape = abs_csv.loc[abs_csv['id'] == shape_id]
         min_x, min_y, min_z = abs_shape['x'].min(), abs_shape['y'].min(), abs_shape['z'].min()
         max_x, max_y, max_z = abs_shape['x'].max(), abs_shape['y'].max(), abs_shape['z'].max()
-        segmentation = waves[min_y:max_y, min_x:max_x, min_z:max_z]
+        segmentation = waves[min_y:max_y + 1, min_x:max_x + 1, min_z:max_z + 1]
         return segmentation.astype('uint8')
 
     def calculate_morphology(self, shape, segmentation):
