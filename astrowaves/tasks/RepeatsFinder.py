@@ -53,18 +53,25 @@ class RepeatsFinder():
         return list(list_of_lists for list_of_lists, _ in itertools.groupby(list_of_lists))
 
     def _merge_repeats(self, repeats_list):
-        final_repeats = []
-        for i in range(len(repeats_list)):
-            new_repeats = repeats_list[i]
-            for j in range(i + 1, len(repeats_list)):
-                if i != j:
-                    if self._do_lists_intersect(repeats_list[i], repeats_list[j]):
-                        new_repeats.extend(repeats_list[j])
-            new_repeats = list(set(new_repeats))
-            final_repeats.append(new_repeats)
+        changed = True
 
-        final_repeats = self._remove_duplicate_lists_from_list(final_repeats)
-        return final_repeats
+        while changed:
+            changed = False
+            for i in range(len(repeats_list)):
+                repeat = repeats_list[i]
+                for j in range(len(repeats_list)):
+                    if i != j:
+                        repeat2 = repeats_list[j]
+                        if not set(repeat).isdisjoint(repeat2):
+                            changed = True
+                            repeats_list[i].extend(repeats_list[j])
+                            del repeats_list[j]
+                            break
+                if changed:
+                    break
+
+        repeats_list = [sorted(list(set(repeat))) for repeat in repeats_list]
+        return repeats_list
 
     def _exclude_repeats_from_singles(self, all_repeat_ids, singles):
         for repeat in all_repeat_ids:
