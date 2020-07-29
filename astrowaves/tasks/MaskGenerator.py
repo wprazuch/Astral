@@ -95,6 +95,8 @@ def main():
     np.save(os.path.join(path, "waves_morph.npy"), waves)
     waves = waves.astype('uint8')
     waves[waves > 0] = 255
+    waves = np.swapaxes(waves, 0, -1)
+    waves = np.swapaxes(waves, 1, 2)
     io.imsave(os.path.join(path, 'black_and_white.tif'), waves)
 
 
