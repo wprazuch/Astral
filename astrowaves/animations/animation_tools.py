@@ -8,7 +8,9 @@ import matplotlib.animation as animation
 import os
 
 
-def visualize_waves(waves, output_path="C:\\Users\\Wojtek\\Documents\\Doktorat\\AstrocyteCalciumWaveDetector\\debug", filename='waves.mp4'):
+def visualize_waves(
+        waves, output_path="C:\\Users\\Wojtek\\Documents\\Doktorat\\AstrocyteCalciumWaveDetector\\debug",
+        filename='waves.mp4'):
 
     ims = []
 
@@ -19,14 +21,17 @@ def visualize_waves(waves, output_path="C:\\Users\\Wojtek\\Documents\\Doktorat\\
         ims.append([im])
 
     ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
-                                repeat_delay=1000)
+                                    repeat_delay=1000)
 
     ani.save(os.path.join(output_path, filename))
+
 
 def create_timespace_wave_video(waves, timespace, output_video_path, filename):
 
     if isinstance(waves, str):
         waves = np.load(waves)
+        waves = waves.astype('uint8')
+        waves[waves > 0] = 255
     elif waves is not np.ndarray:
         print("Error with argument waves")
     if isinstance(timespace, str):
@@ -41,11 +46,11 @@ def create_timespace_wave_video(waves, timespace, output_video_path, filename):
     fig = plt.figure()
 
     for i in tqdm.trange(output_sequence.shape[2]):
-        im = plt.imshow(output_sequence[:,:,i], animated=True, cmap='gray', vmin=0, vmax=255)
+        im = plt.imshow(output_sequence[:, :, i], animated=True, cmap='gray', vmin=0, vmax=255)
         ims.append([im])
 
     ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
-                                repeat_delay=1000)
+                                    repeat_delay=1000)
 
     ani.save(os.path.join(output_video_path, filename))
 
@@ -70,8 +75,9 @@ def create_timespace_wave_video(waves, timespace, output_video_path, filename):
 
 if __name__ == '__main__':
 
-    waves = 'C:\\Users\\Wojtek\\Documents\\Doktorat\\Essen\\Luigi\\Tests\\temp\\waves.npy'
-    timespace = "C:\\Users\\Wojtek\\Documents\\Doktorat\\Essen\\Luigi\\Tests\\temp\\timespace.npy"
-    output_path = "C:\\Users\\Wojtek\\Documents\\Doktorat\\Essen\\Luigi\\Tests\\temp\\video.mp4"
+    waves = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AA_2_4\\waves_morph.npy'
+    timespace = r"C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AA_2_4\\timespace.npy"
+    output_path = r"C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AA_2_4\\video.mp4"
 
-    create_timespace_wave_video(waves, timespace, output_path)
+    create_timespace_wave_video(
+        waves, timespace, r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AA_2_4', 'video.mp4')
