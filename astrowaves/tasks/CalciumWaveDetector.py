@@ -5,6 +5,7 @@ from skimage import measure
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import argparse
+import logging
 
 
 class CalciumWaveDetector():
@@ -14,39 +15,48 @@ class CalciumWaveDetector():
 
     def _indices_label(self, array, label, offset):
         indices = np.argwhere(array == label)
-        indices = [np.concatenate([elem[:-1], [elem[-1] + offset]]) for elem in indices]
+        indices = [np.concatenate([elem[:-1], [elem[-1] + offset]]).tolist() for elem in indices]
         return indices
 
-    def run(self, waves):
-        waves_labelled = measure.label(waves, connectivity=3).astype('uint16')
-        uniq, counts = np.unique(waves_labelled, return_counts=True)
-        labels = uniq[1:]
-        counts = counts[1:]
-        label_counts = list(zip(labels, counts))
-        count_filtered = list(filter(lambda x: x[1] > 30, label_counts))
-        labels, counts = zip(*count_filtered)
-        object_cords = Parallel(n_jobs=5, verbose=10)(delayed(self._indices_label)
-                                                      (waves_labelled, label) for label in labels)
-        return object_cords
+    def find_closest_slice(self, myList, myNumber):
+        return min(myList, key=lambda x: abs(x - myNumber))
 
-    def run2(self, waves, volume_threshold):
-        slices = [slic for slic in range(waves.shape[2]) if not np.any(waves[:, :, slic])]
-        length = waves.shape[2]
-        to_slice = [i*50 for i in range(int(length/50))]
-        def func(myList, myNumber): return min(myList, key=lambda x: abs(x - myNumber))
-        out = list(map(lambda x: func(slices, x), to_slice))
+    def _find_slice_points(self, waves, axis=-1):
+        if axis == -1 or axis == 2:
+            slices = [slic for slic in range(waves.shape[axis]) if not np.any(waves[:, :, slic])]
+        elif axis == 1:
+            slices = [slic for slic in range(waves.shape[axis]) if not np.any(waves[:, slic, :])]
+        else:
+            slices = [slic for slic in range(waves.shape[axis]) if not np.any(waves[slic, :, :])]
+
+        length = waves.shape[axis]
+
+        to_slice = [i * 25 for i in range(int(length / 25))]
+
+        out = list(map(lambda x: self.find_closest_slice(slices, x), to_slice))
         out = [*out, length]
         out = sorted(list(set(out)))
+
+        return out
+
+    def run(self, waves, volume_threshold):
+        logging.debug('Running run method')
+
+        out = self._find_slice_points(waves, axis=-1)
 
         total = []
 
         for index in tqdm(range(len(out) - 1)):
+            logging.debug(f'Starting {index} iteration')
             current = waves[:, :, out[index]:out[index + 1]]
+            logging.debug(f'Labelling objects in a subspace...')
             labelled = measure.label(current, connectivity=3).astype('uint16')
+            logging.debug(f'Finished labelling!')
             last_slice = index
             uniq, counts = np.unique(labelled, return_counts=True)
             labels = uniq[1:]
             counts = counts[1:]
+            logging.debug(f'Got {len(labels)} labels')
             label_counts = list(zip(labels, counts))
             count_filtered = list(filter(lambda x: x[1] > volume_threshold, label_counts))
             if not count_filtered:
@@ -54,6 +64,9 @@ class CalciumWaveDetector():
             labels, counts = zip(*count_filtered)
             object_cords = Parallel(n_jobs=3, verbose=10)(delayed(self._indices_label)
                                                           (labelled, label, out[index]) for label in labels)
+
+            logging.debug(f'Finishing {index} iteration')
+
             total.extend(object_cords)
         return total
 
@@ -71,7 +84,7 @@ def debug():
     debug_path = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AN_2_4'
     waves = np.load(os.path.join(debug_path, "waves_morph.npy"))
     detector = CalciumWaveDetector()
-    waves_inds = detector.run2(waves, 45)
+    waves_inds = detector.run(waves, 45)
     import pickle
 
     with open(os.path.join(debug_path, 'waves_inds.pck'), 'wb') as file:
@@ -86,9 +99,12 @@ def main():
 
     path = os.path.join(rootdir, directory)
 
+    logging.basicConfig(filename=os.path.join(path, 'logging.log'), level=logging.DEBUG)
+    logging.info('Starting CalciumWaveDetector')
+
     waves = np.load(os.path.join(path, "waves_morph.npy"))
     detector = CalciumWaveDetector()
-    waves_inds = detector.run2(waves, int(volume_threshold))
+    waves_inds = detector.run(waves, int(volume_threshold))
     import pickle
 
     with open(os.path.join(path, 'waves_inds.pck'), 'wb') as file:
