@@ -1,8 +1,33 @@
 version: '3'
 services:
   astro:
-    build: .
+    build: 
+        context: .
+        dockerfile: astro-Dockerfile
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 12G   
     ports:
       - "8080:8080"
     volumes:
-      - C:\Users\Wojtek\Documents\Doktorat\Astral:/app
+      - .:/app
+      - F:\Astral\backup\backup:/app/data
+    command: webserver
+    
+  streamlit:
+    build:
+        context: .
+        dockerfile: streamlit-Dockerfile
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 4G
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+      - F:\Astral\backup\backup:/app/data
+    command: "streamlit run ./astrowaves/streamlit/dashboard.py -- --path 'data/'"
