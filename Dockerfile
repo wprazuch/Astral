@@ -29,4 +29,5 @@ RUN pip install \
     --no-warn-script-location \
     -r requirements.txt
 	
+RUN airflow variables -i variables.json
 
