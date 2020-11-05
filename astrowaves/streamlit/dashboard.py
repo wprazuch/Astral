@@ -57,7 +57,7 @@ def scatter_3d(df):
     return fig
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=False)
 def load_data(main_path):
     timespace_path = os.path.join(main_path, 'timespace.npy')
     rel_path = os.path.join(main_path, 'segmentation_relative.h5')
@@ -66,12 +66,12 @@ def load_data(main_path):
     waves_path = os.path.join(main_path, 'waves_morph.npy')
 
     timespace = np.load(timespace_path)
-    waves = np.load(waves_path).astype('uint8')
+    # waves = np.load(waves_path).astype('uint8')
     rel = pd.read_hdf(rel_path)
     abss = pd.read_hdf(abs_path)
     dims = pd.read_hdf(dims_path).astype('int')
 
-    return timespace, waves, rel, abss, dims
+    return timespace, rel, abss, dims
 
 
 def filter_dims_range(dims, x_range, y_range, z_range):
@@ -82,7 +82,7 @@ def filter_dims_range(dims, x_range, y_range, z_range):
     return dims_new
 
 
-timespace, waves, rel, abss, dims = load_data(main_path)
+timespace, rel, abss, dims = load_data(main_path)
 
 
 t_dims = timespace.shape
