@@ -29,6 +29,8 @@ RUN pip install \
     --no-warn-script-location \
     -r requirements.txt
 	
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # SHELL ["/bin/bash", "-c"]
 	
 # CMD ['airflow', 'webserver']
