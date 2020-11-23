@@ -50,7 +50,7 @@ else:
     files = [filename]
 
 tolerance_xy = Variable.get("tolerance_xy")
-tolerance_z = Variable.get("tolerance_z")
+tolerance_t = Variable.get("tolerance_t")
 intersect_threshold = Variable.get("intersect_threshold")
 
 
@@ -61,7 +61,7 @@ for file in files:
     # t1, t2 and t3 are examples of tasks created by instantiating operators
     t1 = BashOperator(
         task_id=f'find_neighbors_{directory}',
-        bash_command=f'python -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_z {tolerance_z}',
+        bash_command=f'python -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_t {tolerance_t}',
         dag=dag,
     )
 

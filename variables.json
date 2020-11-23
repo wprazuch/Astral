@@ -1,8 +1,8 @@
 {
 	"filename": "all",
 	"volume_threshold": 45,
-	"standard_deviation_threshold" : 1.3,
-	"tolerance_xy" : 100,
-	"tolerance_z" : 150,
-	"intersect_threshold" : 0.8
+	"standard_deviation_threshold": 1.3,
+	"tolerance_xy": 100,
+	"tolerance_t": 150,
+	"intersect_threshold": 0.8
 }
