@@ -91,7 +91,7 @@ no_shapes = dims.shape[0]
 
 x_range = st.sidebar.slider("X range", 1, t_dims[1], (1, t_dims[1]))
 y_range = st.sidebar.slider("Y range", 1, t_dims[0], (1, t_dims[0]))
-z_range = st.sidebar.slider("Z range", 1, t_dims[2], (1, t_dims[2]))
+z_range = st.sidebar.slider("T range", 1, t_dims[2], (1, t_dims[2]))
 
 
 dims_new = filter_dims_range(dims, x_range, y_range, z_range)

@@ -17,6 +17,10 @@ class NeighbourFinder():
     def __init__(self):
         pass
 
+    def _get_z_projection(self, shape_id, abs_df):
+        proj = np.unique(abs_df.loc[abs_df['id'] == shape_id, ['x', 'y']].values.astype('int16'), axis=0)
+        return proj
+
     def run(self, tolerance_xy, tolerance_z, absolute_df, dimensions_df):
 
         self.tolerance_xy = tolerance_xy
@@ -28,22 +32,22 @@ class NeighbourFinder():
         dist_dict = self.filter_distant_neighbors(dist_dict, tolerance_xy, tolerance_z)
 
         dist_df = pd.DataFrame(columns=['shape_id_1', 'shape_id_2', 'center_dist_xy',
-                                        'center_dist_z', 'center_of_mass_dist_xy', 'center_of_mass_dist_z'])
+                                        'center_dist_t', 'center_of_mass_dist_xy', 'center_of_mass_dist_t'])
 
         for shape_id, neighbor_dict in tqdm(dist_dict.items()):
             shape1 = shape_id
             for shape2 in neighbor_dict.keys():
                 center_dist_xy, center_dist_z = self.calculate_euc_dists(dimensions_df, shape1, shape2)
 
-                com_dist_xy, com_dist_z = self.calculate_com_dists(dimensions_df, absolute_df, shape1, shape2)
+                com_dist_xy, com_dist_t = self.calculate_com_dists(dimensions_df, absolute_df, shape1, shape2)
 
                 row = {
                     'shape_id_1': shape1,
                     'shape_id_2': shape2,
                     'center_dist_xy': center_dist_xy,
-                    'center_dist_z': center_dist_z,
+                    'center_dist_t': center_dist_z,
                     'center_of_mass_dist_xy': com_dist_xy,
-                    'center_of_mass_dist_z': com_dist_z
+                    'center_of_mass_dist_t': com_dist_t
                 }
 
                 dist_df = dist_df.append(row, ignore_index=True)
@@ -95,8 +99,8 @@ class NeighbourFinder():
                     shape2 = adf.loc[adf['id'] == j]
                     shape1 = shape1[['x', 'y', 'z']]
                     shape2 = shape2[['x', 'y', 'z']]
-                    #border1 = get_border_inds(shape1)
-                    #border2 = get_border_inds(shape2)
+                    # border1 = get_border_inds(shape1)
+                    # border2 = get_border_inds(shape2)
 
                     shape1_xy = shape1[['x', 'y']]
                     shape2_xy = shape2[['x', 'y']]
@@ -160,7 +164,7 @@ class NeighbourFinder():
 
             indices = shape.values
 
-            shape_np = np.zeros(((indices[:, 0].max()+1, indices[:, 1].max()+1, indices[:, 2].max()+1)))
+            shape_np = np.zeros(((indices[:, 0].max() + 1, indices[:, 1].max() + 1, indices[:, 2].max() + 1)))
 
             for i in range(indices.shape[0]):
                 shape_np[indices[i, 0], indices[i, 1], indices[i, 2]] = 1
@@ -188,7 +192,7 @@ class NeighbourFinder():
 
     def generate_df(self, dist_dict):
         dist_df = pd.DataFrame(columns=['shape_id_1', 'shape_id_2', 'center_dist_xy',
-                                        'center_dist_z', 'center_of_mass_dist_xy', 'center_of_mass_dist_z'])
+                                        'center_dist_t', 'center_of_mass_dist_xy', 'center_of_mass_dist_t'])
 
         for shape_id, neighbor_dict in tqdm(dist_dict.items()):
             shape1 = shape_id
@@ -201,9 +205,9 @@ class NeighbourFinder():
                     'shape_id_1': shape1,
                     'shape_id_2': shape2,
                     'center_dist_xy': center_dist_xy,
-                    'center_dist_z': center_dist_z,
+                    'center_dist_t': center_dist_z,
                     'center_of_mass_dist_xy': com_dist_xy,
-                    'center_of_mass_dist_z': com_dist_z
+                    'center_of_mass_dist_t': com_dist_z
                 }
 
                 dist_df = dist_df.append(row, ignore_index=True)
@@ -216,14 +220,14 @@ def parse_args():
     parser.add_argument('--directory', help='output_directory')
     parser.add_argument('--rootdir', type=str, default='/app/data', help='root directory of files')
     parser.add_argument('--tolerance_xy', help='output_directory')
-    parser.add_argument('--tolerance_z', help='output_directory')
+    parser.add_argument('--tolerance_t', help='output_directory')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     tolerance_xy = int(args.tolerance_xy)
-    tolerance_z = int(args.tolerance_z)
+    tolerance_z = int(args.tolerance_t)
     directory = args.directory
     root_dir = args.rootdir
     path = os.path.join(root_dir, directory)
@@ -231,9 +235,20 @@ def main():
     absolute_df = pd.read_hdf(os.path.join(path, 'segmentation_absolute.h5'))
     dims_df = pd.read_hdf(os.path.join(path, 'segmentation_dims.h5'))
     nfinder = NeighbourFinder()
-    dict_df = nfinder.run(50, 100, absolute_df, dims_df)
+    dict_df = nfinder.run(tolerance_xy, tolerance_z, absolute_df, dims_df)
     dict_df = dict_df.sort_values(by=['shape_id_1'])
     dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
+
+    ne2 = dict_df.groupby('shape_id_1').count().iloc[:, :1]
+    ne3 = dict_df.groupby('shape_id_1').mean().iloc[:, -2:]
+
+    neighbors_stat_df = pd.merge(ne2, ne3, right_index=True, left_index=True)
+    neighbors_stat_df.index.Name = 'id'
+    neighbors_stat_df.columns = ['n_neighbors', 'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']
+    neighbors_stat_df['id'] = neighbors_stat_df.index
+    neighbors_stat_df = neighbors_stat_df[['id', 'n_neighbors',
+                                           'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']]
+    neighbors_stat_df.to_csv(os.path.join(path, 'neighbors_statistics.csv'), index=False)
 
 
 def debug():
@@ -250,6 +265,17 @@ def debug():
     dict_df = nfinder.run(50, 100, absolute_df, dims_df)
     dict_df = dict_df.sort_values(by=['shape_id_1'])
     dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
+
+    ne2 = dict_df.groupby('shape_id_1').count().iloc[:, :1]
+    ne3 = dict_df.groupby('shape_id_1').mean().iloc[:, -2:]
+
+    neighbors_stat_df = pd.merge(ne2, ne3, right_index=True, left_index=True)
+    neighbors_stat_df.index.Name = 'id'
+    neighbors_stat_df.columns = ['n_neighbors', 'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']
+    neighbors_stat_df['id'] = neighbors_stat_df.index
+    neighbors_stat_df = neighbors_stat_df[['id', 'n_neighbors',
+                                           'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']]
+    neighbors_stat_df.to_csv(os.path.join(path, 'neighbors_statistics.csv'), index=False)
 
 
 if __name__ == '__main__':
