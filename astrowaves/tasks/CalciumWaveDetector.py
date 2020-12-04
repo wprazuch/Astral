@@ -19,7 +19,11 @@ class CalciumWaveDetector():
         return indices
 
     def find_closest_slice(self, myList, myNumber):
-        return min(myList, key=lambda x: abs(x - myNumber))
+        try:
+            slic = min(myList, key=lambda x: abs(x - myNumber))
+        except:
+            slic = 0
+        return slic
 
     def _find_slice_points(self, waves, axis=-1):
         if axis == -1 or axis == 2:
@@ -34,6 +38,7 @@ class CalciumWaveDetector():
         to_slice = [i * 25 for i in range(int(length / 25))]
 
         out = list(map(lambda x: self.find_closest_slice(slices, x), to_slice))
+        out = sorted(list(set(out)))
         out = [*out, length]
         out = sorted(list(set(out)))
 
