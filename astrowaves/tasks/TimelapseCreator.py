@@ -15,18 +15,25 @@ logging.basicConfig(level=logging.INFO)
 
 class TimelapseCreator():
 
-    def __init__(self):
-        pass
+    def load_timelapse(self, path_to_file):
+        img = Image.open(path_to_file)
+        return img
 
-    def run(self, path_to_image=None):
-        img = Image.open(path_to_image)
-        no_frames = img.n_frames
-        timespace = np.zeros(shape=img.size[::-1] + (no_frames,))
+    def create_3d_space(self, timelapse):
+        no_frames = timelapse.n_frames
+        timespace = np.zeros(shape=timelapse.size[::-1] + (no_frames,))
         for i in tqdm(range(no_frames)):
-            img.seek(i)
-            slic = np.array(img)
+            timelapse.seek(i)
+            slic = np.array(timelapse)
             timespace[:, :, i] = slic
         timespace = timespace.astype('uint8')
+        return timespace
+
+    def run(self, path_to_file=None):
+
+        timelapse = self.load_timelapse(path_to_file)
+        timespace = self.create_3d_space(timelapse)
+
         return timespace
 
 
