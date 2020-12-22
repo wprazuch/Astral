@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
+from airflow.utils.weight_rule import WeightRule
 import os
 # These args will get passed on to each operator
 # You can override them on a per-task basis during operator initialization
@@ -56,6 +57,7 @@ for file in files:
         task_id=f'create_timelapse_{directory}',
         bash_command=f'python -m astrowaves.tasks.TimelapseCreator --filename {filename} --directory {directory}',
         dag=dag,
+        weight_rule=WeightRule.UPSTREAM
     )
 
     t3 = BashOperator(
@@ -63,15 +65,15 @@ for file in files:
         depends_on_past=False,
         bash_command=f'python -m astrowaves.tasks.CalciumWavesExtractor --directory {directory}',
         dag=dag,
+        weight_rule=WeightRule.UPSTREAM
     )
 
     standard_deviation_threshold = Variable.get("standard_deviation_threshold")
+    use_watershed = Variable.get("use_watershed")
     t4 = BashOperator(
-        task_id=f'create_masks_{directory}',
-        depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory}',
-        dag=dag,
-    )
+        task_id=f'create_masks_{directory}', depends_on_past=False,
+        bash_command=f'python -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory} --use_watershed {use_watershed}',
+        dag=dag, weight_rule=WeightRule.UPSTREAM)
 
     # t1 >> t2 >> t3 >> t4 >> t5 >> t6 >> t7
     t1 >> t3 >> t4

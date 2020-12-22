@@ -13,7 +13,7 @@ services:
       - "8080:8080"
     volumes:
       - .:/app
-      - F:\Astral\backup\backup:/app/data
+      - D:\Astral\data:/app/data
     command: webserver
     
   streamlit:
@@ -24,10 +24,10 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 4G
+          memory: 3G
     ports:
       - "8501:8501"
     volumes:
       - .:/app
-      - F:\Astral\backup\backup:/app/data
+      - D:\Astral\data:/app/data
     command: "streamlit run ./astrowaves/streamlit/dashboard.py -- --path 'data/'"

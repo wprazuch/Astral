@@ -215,6 +215,10 @@ class NeighbourFinder():
         return dist_df
 
 
+def find_neighbors():
+    pass
+
+
 def parse_args():
     parser = argparse.ArgumentParser(prog='Segmenter')
     parser.add_argument('--directory', help='output_directory')
@@ -236,33 +240,6 @@ def main():
     dims_df = pd.read_hdf(os.path.join(path, 'segmentation_dims.h5'))
     nfinder = NeighbourFinder()
     dict_df = nfinder.run(tolerance_xy, tolerance_z, absolute_df, dims_df)
-    dict_df = dict_df.sort_values(by=['shape_id_1'])
-    dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
-
-    ne2 = dict_df.groupby('shape_id_1').count().iloc[:, :1]
-    ne3 = dict_df.groupby('shape_id_1').mean().iloc[:, -2:]
-
-    neighbors_stat_df = pd.merge(ne2, ne3, right_index=True, left_index=True)
-    neighbors_stat_df.index.Name = 'id'
-    neighbors_stat_df.columns = ['n_neighbors', 'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']
-    neighbors_stat_df['id'] = neighbors_stat_df.index
-    neighbors_stat_df = neighbors_stat_df[['id', 'n_neighbors',
-                                           'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']]
-    neighbors_stat_df.to_csv(os.path.join(path, 'neighbors_statistics.csv'), index=False)
-
-
-def debug():
-    args = parse_args()
-
-    directory = 'Cont_AN_2_4'
-    root_dir = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data'
-    path = os.path.join(root_dir, directory)
-
-    absolute_df = pd.read_hdf(os.path.join(path, 'segmentation_absolute.h5'))
-    dims_df = pd.read_hdf(os.path.join(path, 'segmentation_dims.h5'))
-
-    nfinder = NeighbourFinder()
-    dict_df = nfinder.run(50, 100, absolute_df, dims_df)
     dict_df = dict_df.sort_values(by=['shape_id_1'])
     dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
 

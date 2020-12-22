@@ -54,9 +54,9 @@ for file in files:
 
     volume_threshold = Variable.get("volume_threshold")
     t5 = BashOperator(
-        task_id=f'detect_waves_{directory}',
+        task_id=f'label_waves_{directory}',
         depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.CalciumWaveDetector --volume_threshold {volume_threshold} --directory {directory}',
+        bash_command=f'python -m astrowaves.tasks.WaveLabeller --volume_threshold {volume_threshold} --directory {directory}',
         dag=dag,
     )
 

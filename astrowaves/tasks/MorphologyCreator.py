@@ -192,7 +192,8 @@ def main():
 
     abs_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_absolute.h5'))
     rel_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_relative.h5'))
-    waves = np.load(os.path.join(directory_path, 'waves_morph.npy'))
+    waves = np.load(os.path.join(directory_path, 'labelled_waves.npy'))
+    waves = waves.astype(bool)
     neighbors_df = pd.read_csv(os.path.join(directory_path, 'neighbors.csv'))
 
     with open(os.path.join(directory_path, 'singles.pickle'), 'rb') as f:
