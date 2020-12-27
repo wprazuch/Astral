@@ -130,6 +130,23 @@ class RepeatsFinder():
             return singles, []
 
 
+def find_repeats(input_path, output_path, intersect_threshold=0.8):
+    abs_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5')).astype('int16')
+    abs_df = abs_df[['id', 'x', 'y']]
+
+    neighbors_df = pd.read_csv(os.path.join(input_path, 'neighbors.csv')).astype('int16')
+
+    repeats_finder = RepeatsFinder()
+
+    singles, repeats = repeats_finder.run(intersect_threshold, abs_df, neighbors_df)
+
+    with open(os.path.join(output_path, 'singles.pickle'), 'wb') as handle:
+        pickle.dump(singles, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open(os.path.join(output_path, 'repeats.pickle'), 'wb') as handle:
+        pickle.dump(repeats, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(prog='RepeatsFinder')
     parser.add_argument('--directory', help='output_directory')
@@ -138,39 +155,21 @@ def parse_args():
     return parser.parse_args()
 
 
-def debug():
-    args = parse_args()
-    root_dir = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data'
-    directory = 'Cont_AA_1_2'
-    directory_path = os.path.join(root_dir, directory)
-    abs_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_absolute.h5')).astype('int16')
-    abs_df = abs_df[['id', 'x', 'y']]
-    neighbors_df = pd.read_csv(os.path.join(directory_path, 'neighbors.csv')).astype('int16')
-    repeats_finder = RepeatsFinder()
-    singles, repeats = repeats_finder.run(0.8, abs_df, neighbors_df)
-
-    with open(r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\singles.pickle', 'wb') as handle:
-        pickle.dump(singles, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    with open(r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\repeats.pickle', 'wb') as handle:
-        pickle.dump(repeats, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
 def main():
     args = parse_args()
     root_dir = args.rootdir
     directory = args.directory
 
     intersect_threshold = float(args.intersect_threshold)
-    directory_path = os.path.join(root_dir, directory)
+    input_path = os.path.join(root_dir, directory)
 
-    logging.basicConfig(filename=os.path.join(directory_path, 'logging.log'), level=logging.DEBUG)
+    logging.basicConfig(filename=os.path.join(input_path, 'logging.log'), level=logging.DEBUG)
     logging.info('Starting RepeatsFinder')
 
-    abs_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_absolute.h5')).astype('int16')
+    abs_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5')).astype('int16')
     abs_df = abs_df[['id', 'x', 'y']]
 
-    neighbors_df = pd.read_csv(os.path.join(directory_path, 'neighbors.csv')).astype('int16')
+    neighbors_df = pd.read_csv(os.path.join(input_path, 'neighbors.csv')).astype('int16')
 
     logging.info('Loaded metadata neighbors and absolute voxels indices.')
 
@@ -181,10 +180,10 @@ def main():
 
     logging.info('Pickling singles and repeats...')
 
-    with open(os.path.join(directory_path, 'singles.pickle'), 'wb') as handle:
+    with open(os.path.join(input_path, 'singles.pickle'), 'wb') as handle:
         pickle.dump(singles, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(directory_path, 'repeats.pickle'), 'wb') as handle:
+    with open(os.path.join(input_path, 'repeats.pickle'), 'wb') as handle:
         pickle.dump(repeats, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     logging.info('Done.')

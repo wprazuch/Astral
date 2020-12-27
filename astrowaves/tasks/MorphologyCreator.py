@@ -14,9 +14,6 @@ from skimage.measure import regionprops
 
 class MorphologyCreator():
 
-    def __init__(self):
-        pass
-
     def get_shape_voxels_by_id(self, abs_csv, shape_id):
         return abs_csv.loc[abs_csv['id'] == shape_id]
 
@@ -59,12 +56,13 @@ class MorphologyCreator():
         return volume
 
     def calculate_morphology_for_singles(self, singles, abs_csv, waves, rel_df):
-        morphology_df = pd.DataFrame(columns=['shape_id', 'max_x_size', 'max_y_size',
-                                              'max_z_size', 'sphericity', 'circularity', 'max_xy_diameter'])
+
+        morphology_data = []
+
         for single_id in singles:
             seg = self.get_shape_bbox(abs_csv, waves, single_id)
             morph_dict = self.calculate_morphology(seg.copy(), seg)
-            morph_dict['shape_id'] = int(single_id)
+            shape_id = int(single_id)
 
             shape2 = self.get_shape_voxels_by_id(rel_df, single_id)
             idxs = shape2[['x', 'y', 'z']].values
@@ -77,20 +75,29 @@ class MorphologyCreator():
             reg = list(regionprops(proj))
 
             max_xy = round(np.mean(reg[0].major_axis_length), 2)
+
             circularity = round(np.mean(circ(reg[0])), 2)
+            max_xy_diameter = max_xy
 
-            morph_dict['circularity'] = circularity
-            morph_dict['max_xy_diameter'] = max_xy
+            max_x_size = morph_dict['max_x_size']
+            max_y_size = morph_dict['max_y_size']
+            max_z_size = morph_dict['max_z_size']
+            sphericity = morph_dict['sphericity']
 
-            morphology_df = morphology_df.append(morph_dict, ignore_index=True)
+            morph_row = [shape_id, max_x_size, max_y_size, max_z_size, sphericity, circularity, max_xy_diameter]
+
+            morphology_data.append(morph_row)
+
+        morphology_df = pd.DataFrame(
+            columns=['shape_id', 'max_x_size', 'max_y_size', 'max_z_size', 'sphericity',
+                     'circularity', 'max_xy_diameter'],
+            data=morphology_data)
 
         return morphology_df
 
     def calculate_morphology_for_repeats(self, repeats, abs_csv, waves, rel_df):
-        repeat_df = pd.DataFrame(
-            columns=['shape_ids', 'number_of_repeats', 'avg_sphericity', 'avg_maximum_x',
-                     'avg_maximum_y', 'avg_maximum_z', 'median_inter_repeat_min_z_dist',
-                     'median_inter_repeat_center_dist', 'avg_circularity', 'avg_max_xy_diameter'])
+
+        repeats_data = []
 
         for repeat_series in repeats:
 
@@ -162,7 +169,17 @@ class MorphologyCreator():
                 'avg_circularity': avg_circ,
                 'avg_max_xy_diameter': avg_max_xy}
 
-            repeat_df = repeat_df.append(morph_dict, ignore_index=True)
+            repeat_row = [shape_ids, no_repeats, mean_sphericity, mean_max_x_size,
+                          mean_max_y_size, mean_max_z_size, med_dist, med_centers, avg_circ, avg_max_xy]
+
+            # repeat_df = repeat_df.append(morph_dict, ignore_index=True)
+
+            repeats_data.append(repeat_row)
+
+        repeat_df = pd.DataFrame(
+            columns=['shape_ids', 'number_of_repeats', 'avg_sphericity', 'avg_maximum_x',
+                     'avg_maximum_y', 'avg_maximum_z', 'median_inter_repeat_min_z_dist',
+                     'median_inter_repeat_center_dist', 'avg_circularity', 'avg_max_xy_diameter'], data=repeats_data)
         return repeat_df
 
     def run(self, singles, repeats, abs_csv, neigh_csv, waves, rel_df):
@@ -188,51 +205,47 @@ def main():
     args = parse_args()
     root_dir = args.rootdir
     directory = args.directory
-    directory_path = os.path.join(root_dir, directory)
+    input_path = os.path.join(root_dir, directory)
 
-    abs_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_absolute.h5'))
-    rel_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_relative.h5'))
-    waves = np.load(os.path.join(directory_path, 'labelled_waves.npy'))
+    abs_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5'))
+    rel_df = pd.read_hdf(os.path.join(input_path, 'segmentation_relative.h5'))
+    waves = np.load(os.path.join(input_path, 'labelled_waves.npy'))
     waves = waves.astype(bool)
-    neighbors_df = pd.read_csv(os.path.join(directory_path, 'neighbors.csv'))
+    neighbors_df = pd.read_csv(os.path.join(input_path, 'neighbors.csv'))
 
-    with open(os.path.join(directory_path, 'singles.pickle'), 'rb') as f:
+    with open(os.path.join(input_path, 'singles.pickle'), 'rb') as f:
         singles = pickle.load(f)
 
-    with open(os.path.join(directory_path, 'repeats.pickle'), 'rb') as f:
+    with open(os.path.join(input_path, 'repeats.pickle'), 'rb') as f:
         repeats = pickle.load(f)
 
     morphology_creator = MorphologyCreator()
     single_df, repeat_df, neigh_df = morphology_creator.run(singles, repeats, abs_df, neighbors_df, waves, rel_df)
 
-    single_df.to_csv(os.path.join(directory_path, 'singles.csv'), index=False)
-    repeat_df.to_csv(os.path.join(directory_path, 'repeats.csv'), index=False)
-    neighbors_df.to_csv(os.path.join(directory_path, 'neighbors.csv'), index=False)
+    single_df.to_csv(os.path.join(input_path, 'singles.csv'), index=False)
+    repeat_df.to_csv(os.path.join(input_path, 'repeats.csv'), index=False)
+    neighbors_df.to_csv(os.path.join(input_path, 'neighbors.csv'), index=False)
 
 
-def debug():
-    args = parse_args()
+def create_morphologies(input_path, output_path):
+    abs_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5'))
+    rel_df = pd.read_hdf(os.path.join(input_path, 'segmentation_relative.h5'))
+    waves = np.load(os.path.join(input_path, 'labelled_waves.npy'))
+    waves = waves.astype(bool)
+    neighbors_df = pd.read_csv(os.path.join(input_path, 'neighbors.csv'))
 
-    root_dir = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data'
-    directory = 'Cont_AA_1_2'
-    directory_path = os.path.join(root_dir, directory)
-    abs_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_absolute.h5'))
-    rel_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_relative.h5'))
-    waves = np.load(os.path.join(directory_path, 'waves_morph.npy'))
-    neighbors_df = pd.read_csv(os.path.join(directory_path, 'neighbors.csv'))
-
-    with open(r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AA_1_2\singles.pickle', 'rb') as f:
+    with open(os.path.join(input_path, 'singles.pickle'), 'rb') as f:
         singles = pickle.load(f)
 
-    with open(r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\Cont_AA_1_2\repeats.pickle', 'rb') as f:
+    with open(os.path.join(input_path, 'repeats.pickle'), 'rb') as f:
         repeats = pickle.load(f)
 
     morphology_creator = MorphologyCreator()
     single_df, repeat_df, neigh_df = morphology_creator.run(singles, repeats, abs_df, neighbors_df, waves, rel_df)
 
-    single_df.to_csv(os.path.join(directory_path, 'singles.csv'), index=False)
-    repeat_df.to_csv(os.path.join(directory_path, 'repeats.csv'), index=False)
-    neighbors_df.to_csv(os.path.join(directory_path, 'neighbors.csv'), index=False)
+    single_df.to_csv(os.path.join(output_path, 'singles.csv'), index=False)
+    repeat_df.to_csv(os.path.join(output_path, 'repeats.csv'), index=False)
+    neighbors_df.to_csv(os.path.join(output_path, 'neighbors.csv'), index=False)
 
 
 if __name__ == '__main__':
