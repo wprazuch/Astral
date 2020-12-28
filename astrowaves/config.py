@@ -23,4 +23,7 @@ DIMENSIONS_DF_COLUMNS = {
     'CENTER_Y': 'center_y',
     'CENTER_X': 'center_x',
     'CENTER_Z': 'center_z',
+    'CENTER_OF_MASS_X': 'center_of_mass_x',
+    'CENTER_OF_MASS_Y': 'center_of_mass_y',
+    'CENTER_OF_MASS_Z': 'center_of_mass_z'
 }

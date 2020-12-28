@@ -1,3 +1,4 @@
+from scipy.ndimage.measurements import center_of_mass
 import numpy as np
 import pandas as pd
 import os
@@ -10,50 +11,32 @@ from .models.rows import DimensionsRow
 class MetadataGenerator():
 
     def run(self, waves_ind_list, timespace):
-        data_relative = np.ndarray(shape=(0, 5))
-        data_absolute = np.ndarray(shape=(0, 5), dtype='int32')
 
-        abs_df_col_names = list(config.ABS_DF_COLUMNS.keys())
-        rel_df_col_names = list(config.REL_DF_COLUMNS.keys())
-        dims_df_col_names = list(config.DIMENSIONS_DF_COLUMNS.keys())
+        abs_df_col_names = list(config.ABS_DF_COLUMNS.values())
+        rel_df_col_names = list(config.REL_DF_COLUMNS.values())
+        dims_df_col_names = list(config.DIMENSIONS_DF_COLUMNS.values())
+
+        data_relative = np.ndarray(shape=(0, len(rel_df_col_names)))
+        data_absolute = np.ndarray(shape=(0, len(abs_df_col_names)), dtype='int32')
 
         indices_sorted = list(reversed(sorted(waves_ind_list.copy(), key=len)))
         indices_filtered_volume = list(filter(lambda x: len(x) > 200, indices_sorted))
-
-        data_dims = np.zeros(shape=(len(indices_filtered_volume), 10), dtype='int32')
+        data_dims = np.zeros(shape=(len(indices_filtered_volume), len(dims_df_col_names)), dtype='int32')
 
         for i, indices in enumerate(indices_filtered_volume):
             max_x, min_x, max_y, min_y, max_z, min_z = self.get_extrema_cords(indices)
+
             center_x, center_y, center_z = self.get_center_cords(max_x, min_x, max_y, min_y, max_z, min_z)
-
-            roi_shape, indices_shift = self.get_index_shift(indices, max_x, min_x, max_y, min_y, max_z, min_z)
-
-            roi = np.zeros(shape=roi_shape, dtype='uint16')
-
-            color = np.ones((indices_shift.shape[0], 1), dtype='uint16')
-
-            dims_row = self.get_dims_data_row(i, max_x, min_x, max_y, min_y,
-                                              max_z, min_z, center_x, center_y, center_z)
+            center_of_mass_cords = self.get_center_of_mass(indices)
+            dims_row = self.get_dims_data_row(
+                i, max_x, min_x, max_y, min_y, max_z, min_z, center_x, center_y, center_z,
+                center_of_mass_cords)
 
             data_dims[i, :] = dims_row
 
-            for index, ref_index in zip(indices_shift, indices):
-                x, y, z = index
-                x_ref, y_ref, z_ref = ref_index
-                roi[x, y, z] = timespace[x_ref, y_ref, z_ref]
-
-            for j, index in enumerate(indices_shift):
-                x, y, z = index
-                color[j] = roi[x, y, z]
-
-            id_ = i * np.ones((indices_shift.shape[0], 1), dtype='uint16')
-
-            data_r = np.concatenate([id_, indices_shift, color], axis=1)
-            data_a = np.concatenate([id_, indices, color], axis=1)
-            data_relative = np.concatenate([data_relative, data_r], axis=0)
-            data_relative = data_relative.astype('uint16')
-            data_absolute = np.concatenate([data_absolute, data_a], axis=0)
-            data_absolute = data_absolute.astype('int32')
+            roi_shape, indices_shift = self.get_index_shift(indices, max_x, min_x, max_y, min_y, max_z, min_z)
+            data_relative, data_absolute = self.generate_abs_rel_data(
+                timespace, data_relative, data_absolute, i, indices, roi_shape, indices_shift)
 
         rel_df = pd.DataFrame(columns=rel_df_col_names, data=data_relative)
         abs_df = pd.DataFrame(columns=abs_df_col_names, data=data_absolute)
@@ -61,8 +44,43 @@ class MetadataGenerator():
 
         return (abs_df, rel_df, dims_df)
 
-    def get_dims_data_row(self, i, max_x, min_x, max_y, min_y, max_z, min_z, center_x, center_y, center_z):
-        row_obj = DimensionsRow(i, min_y, max_y, min_x, max_x, min_z, max_z, center_y, center_x, center_z)
+    def get_center_of_mass(self, indices):
+        indices = np.array(indices)
+        shape = indices.max(axis=0) + [1, 1, 1]
+        roi = np.zeros(shape, dtype=bool)
+        roi[indices[:, 0], indices[:, 1], indices[:, 2]] = True
+        center_mass = center_of_mass(roi)
+        return center_mass
+
+    def generate_abs_rel_data(
+            self, timespace, data_relative, data_absolute, i, indices, roi_shape, indices_shift):
+        roi = np.zeros(shape=roi_shape, dtype='uint16')
+        color = np.ones((indices_shift.shape[0], 1), dtype='uint16')
+        for index, ref_index in zip(indices_shift, indices):
+            x, y, z = index
+            x_ref, y_ref, z_ref = ref_index
+            roi[x, y, z] = timespace[x_ref, y_ref, z_ref]
+        for j, index in enumerate(indices_shift):
+            x, y, z = index
+            color[j] = roi[x, y, z]
+        id_ = i * np.ones((indices_shift.shape[0], 1), dtype='uint16')
+        data_r = np.concatenate([id_, indices_shift, color], axis=1)
+        data_a = np.concatenate([id_, indices, color], axis=1)
+        data_relative = np.concatenate([data_relative, data_r], axis=0)
+        data_relative = data_relative.astype('uint16')
+
+        print(data_a.shape)
+        print(data_absolute.shape)
+
+        data_absolute = np.concatenate([data_absolute, data_a], axis=0)
+        data_absolute = data_absolute.astype('int32')
+        return data_relative, data_absolute
+
+    def get_dims_data_row(
+            self, i, max_x, min_x, max_y, min_y, max_z, min_z, center_x, center_y, center_z,
+            center_of_mass_cords):
+        row_obj = DimensionsRow(i, min_y, max_y, min_x, max_x, min_z, max_z,
+                                center_y, center_x, center_z, center_of_mass_cords)
         row = row_obj.get_row()
         return row
 

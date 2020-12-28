@@ -61,9 +61,9 @@ for file in files:
     )
 
     t6 = BashOperator(
-        task_id=f'segment_waves_{directory}',
+        task_id=f'generate_metadata_{directory}',
         depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.CalciumWaveSegmenter --directory {directory}',
+        bash_command=f'python -m astrowaves.tasks.MetadataGenerator --directory {directory}',
         dag=dag,
     )
 

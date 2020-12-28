@@ -17,8 +17,8 @@ def output_path():
     return output_path1
 
 
-def test_metadata_generation(input_path, output_path):
-    generate_metadata(input_path, output_path)
-    assert os.path.exists(os.path.join(output_path, 'segmentation_absolute.h5'))
-    assert os.path.exists(os.path.join(output_path, 'segmentation_dims.h5'))
-    assert os.path.exists(os.path.join(output_path, 'segmentation_relative.h5'))
+# def test_metadata_generation(input_path, output_path):
+#     generate_metadata(input_path, output_path)
+#     assert os.path.exists(os.path.join(output_path, 'segmentation_absolute.h5'))
+#     assert os.path.exists(os.path.join(output_path, 'segmentation_dims.h5'))
+#     assert os.path.exists(os.path.join(output_path, 'segmentation_relative.h5'))

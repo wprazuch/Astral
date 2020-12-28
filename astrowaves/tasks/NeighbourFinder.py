@@ -1,3 +1,4 @@
+from .. import config
 from scipy.ndimage import binary_fill_holes
 import os
 import numpy as np
@@ -32,11 +33,11 @@ class NeighbourFinder():
 
         return neighbours_dict
 
-    def generate_neighbor_row(self, shape1_id, shape2_id, abs_df_chunk, dims_df_chunk):
+    def generate_neighbor_row(self, shape1_id, shape2_id, dims_df_chunk):
         center_dist_xy, center_dist_z = self.calculate_euc_dists(dims_df_chunk, shape1_id, shape2_id)
 
         com_dist_xy, com_dist_t = self.calculate_center_of_mass_dists(
-            dims_df_chunk, abs_df_chunk, shape1_id, shape2_id)
+            dims_df_chunk, shape1_id, shape2_id)
 
         # row_dict = {
         #     'shape_id_1': shape1_id,
@@ -53,15 +54,13 @@ class NeighbourFinder():
 
     def generate_neighbour_data_for(self, shape1_id, neighbour_ids):
 
-        abs_df_chunk = self.absolute_df.loc[(self.absolute_df['id'] == shape1_id)
-                                            | (self.absolute_df['id'].isin(neighbour_ids))]
         dims_df_chunk = self.dimensions_df.loc[(self.dimensions_df['id'] == shape1_id) |
                                                (self.dimensions_df['id'].isin(neighbour_ids))]
 
         shape1_id_row_data = []
 
         for shape2_id in neighbour_ids:
-            shape1_id_row = self.generate_neighbor_row(shape1_id, shape2_id, abs_df_chunk, dims_df_chunk)
+            shape1_id_row = self.generate_neighbor_row(shape1_id, shape2_id, dims_df_chunk)
             shape1_id_row_data.append(shape1_id_row)
         return shape1_id_row_data
 
@@ -84,8 +83,10 @@ class NeighbourFinder():
 
             # dist_df = dist_df.append(row_dict, ignore_index=True)
 
-        dist_df = pd.DataFrame(columns=['shape_id_1', 'shape_id_2', 'center_dist_xy',
-                                        'center_dist_t', 'center_of_mass_dist_xy', 'center_of_mass_dist_t'], data=row_data)
+        dist_df = pd.DataFrame(
+            columns=['shape_id_1', 'shape_id_2', 'center_dist_xy', 'center_dist_t',
+                     'center_of_mass_dist_xy', 'center_of_mass_dist_t'],
+            data=row_data)
         dist_df = dist_df.astype('int')
         dist_df = dist_df.sort_values(by=['shape_id_1'])
 
@@ -206,47 +207,22 @@ class NeighbourFinder():
 
         return center_dist_xy, center_dist_z
 
-    def calculate_center_of_mass_dists(self, ddf, adf, shape1_id, shape2_id):
+    def calculate_center_of_mass_dists(self, ddf, shape1_id, shape2_id):
 
-        shape1 = adf.loc[adf['id'] == shape1_id]
-        shape2 = adf.loc[adf['id'] == shape2_id]
-        shapes = [shape1, shape2]
+        z1 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] ==
+                     shape1_id, config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Z']].values
+        z2 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] ==
+                     shape2_id, config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Z']].values
 
-        shapes = list(map(lambda df: df[['x', 'y', 'z']], shapes))
+        xy1 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] == shape1_id,
+                      [config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_X'],
+                       config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Y']]].values
 
-        offsets = []
+        xy2 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] == shape2_id,
+                      [config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_X'],
+                       config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Y']]].values
 
-        coms = []
-
-        for shape in shapes:
-            offsets.append([shape.x.min(), shape.y.min(), shape.z.min()])
-            shape.x = shape.x - shape.x.min()
-            shape.y = shape.y - shape.y.min()
-            shape.z = shape.z - shape.z.min()
-
-            indices = shape.values
-
-            shape_np = np.zeros((indices[:, 0].max() + 1, indices[:, 1].max() + 1, indices[:, 2].max() + 1))
-
-            shape_np[indices[:, 0], indices[:, 1], indices[:, 2]] = 1
-
-            # print(np.unique(shape_np))
-            com = ndimage.measurements.center_of_mass(shape_np)
-            # print(com)
-            com = list(map(lambda x: int(x), com))
-            coms.append(com)
-
-        coms_offset = []
-
-        for com, offset in zip(coms, offsets):
-            coms_offset.append(list(map(add, com, offset)))
-
-        xy1, xy2 = coms_offset[0][:2], coms_offset[1][:2]
-        xy1, xy2 = np.array(xy1), np.array(xy2)
-        xy1, xy2 = np.expand_dims(xy1, -1).T, np.expand_dims(xy2, -1).T
-        z1, z2 = coms_offset[0][2], coms_offset[1][2]
-
-        com_dist_z = abs(z1-z2)
+        com_dist_z = abs(z1 - z2)
         com_dist_xy = cdist(xy1, xy2)[0][0]
 
         return com_dist_xy, com_dist_z
