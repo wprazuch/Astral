@@ -12,9 +12,6 @@ import logging
 
 class RepeatsFinder():
 
-    def __init__(self):
-        pass
-
     def _do_overlap(self, shape1, shape2, threshold):
         logging.debug('Inside _do_overlap')
         no_intersected = self._multidim_intersect(shape1, shape2)
@@ -99,22 +96,13 @@ class RepeatsFinder():
         for shape1_id in tqdm(ids):
             #     print(f"Shape1 id: {shape1_id}")
             logging.debug('Getting all neighbours of shape %s' % shape1_id)
-            neighbors = neighbor_df.loc[neighbor_df['shape_id_1'] == shape1_id]['shape_id_2'].values
-        #     print(f"Neighbors : {neighbors}")
-            for shape2_id in neighbors:
-                #         print(f"Shape2 id: {shape2_id}")
-                logging.debug('Getting z projections...')
-                shape1_proj = self._get_z_projection(shape1_id, abs_df)
-                shape2_proj = self._get_z_projection(shape2_id, abs_df)
 
-                logging.debug('Got projections')
-                if self._do_overlap(shape1_proj, shape2_proj, threshold):
-                    logging.debug('Found repeat')
-                    repeats[shape1_id].append(shape2_id)
-                else:
-                    logging.debug('Next...')
-            if not repeats[shape1_id]:
+            shape1_id_repeats = self.search_for_repeats_of(shape1_id, neighbor_df, abs_df, threshold)
+
+            if len(shape1_id_repeats) == 0:
                 singles.append(shape1_id)
+            else:
+                repeats[shape1_id] = shape1_id_repeats
 
         if repeats:
             repeats_uq = {key: value for key, value in repeats.items() if value}
@@ -128,6 +116,24 @@ class RepeatsFinder():
             return singles, repeats_final
         else:
             return singles, []
+
+    def search_for_repeats_of(self, shape_id, neighbors_df, absolute_df, threshold):
+        neighbors = neighbors_df.loc[neighbors_df['shape_id_1'] == shape_id]['shape_id_2'].values
+        repeats = []
+
+        for shape2_id in neighbors:
+            logging.debug('Getting z projections...')
+            shape1_proj = self._get_z_projection(shape_id, absolute_df)
+            shape2_proj = self._get_z_projection(shape2_id, absolute_df)
+
+            logging.debug('Got projections')
+            if self._do_overlap(shape1_proj, shape2_proj, threshold):
+                logging.debug('Found repeat')
+                repeats.append(shape2_id)
+            else:
+                logging.debug('Next...')
+
+        return repeats
 
 
 def find_repeats(input_path, output_path, intersect_threshold=0.8):
