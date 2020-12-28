@@ -71,12 +71,12 @@ class MorphologyCreator():
             proj[proj > 0] = 1
             proj = proj.astype(np.int)
 
-            def circ(r): return (4 * math.pi * r.area) / (r.perimeter * r.perimeter)
+            def circularity(r): return (4 * math.pi * r.area) / (r.perimeter * r.perimeter)
             reg = list(regionprops(proj))
 
             max_xy = round(np.mean(reg[0].major_axis_length), 2)
 
-            circularity = round(np.mean(circ(reg[0])), 2)
+            circularity = round(np.mean(circularity(reg[0])), 2)
             max_xy_diameter = max_xy
 
             max_x_size = morph_dict['max_x_size']
@@ -84,7 +84,8 @@ class MorphologyCreator():
             max_z_size = morph_dict['max_z_size']
             sphericity = morph_dict['sphericity']
 
-            morph_row = [shape_id, max_x_size, max_y_size, max_z_size, sphericity, circularity, max_xy_diameter]
+            morph_row = [shape_id, max_x_size, max_y_size,
+                         max_z_size, sphericity, circularity, max_xy_diameter]
 
             morphology_data.append(morph_row)
 
@@ -179,7 +180,9 @@ class MorphologyCreator():
         repeat_df = pd.DataFrame(
             columns=['shape_ids', 'number_of_repeats', 'avg_sphericity', 'avg_maximum_x',
                      'avg_maximum_y', 'avg_maximum_z', 'median_inter_repeat_min_z_dist',
-                     'median_inter_repeat_center_dist', 'avg_circularity', 'avg_max_xy_diameter'], data=repeats_data)
+                     'median_inter_repeat_center_dist', 'avg_circularity',
+                     'avg_max_xy_diameter'],
+            data=repeats_data)
         return repeat_df
 
     def run(self, singles, repeats, abs_csv, neigh_csv, waves, rel_df):
@@ -220,7 +223,8 @@ def main():
         repeats = pickle.load(f)
 
     morphology_creator = MorphologyCreator()
-    single_df, repeat_df, neigh_df = morphology_creator.run(singles, repeats, abs_df, neighbors_df, waves, rel_df)
+    single_df, repeat_df, neigh_df = morphology_creator.run(
+        singles, repeats, abs_df, neighbors_df, waves, rel_df)
 
     single_df.to_csv(os.path.join(input_path, 'singles.csv'), index=False)
     repeat_df.to_csv(os.path.join(input_path, 'repeats.csv'), index=False)
@@ -241,7 +245,8 @@ def create_morphologies(input_path, output_path):
         repeats = pickle.load(f)
 
     morphology_creator = MorphologyCreator()
-    single_df, repeat_df, neigh_df = morphology_creator.run(singles, repeats, abs_df, neighbors_df, waves, rel_df)
+    single_df, repeat_df, neigh_df = morphology_creator.run(
+        singles, repeats, abs_df, neighbors_df, waves, rel_df)
 
     single_df.to_csv(os.path.join(output_path, 'singles.csv'), index=False)
     repeat_df.to_csv(os.path.join(output_path, 'repeats.csv'), index=False)

@@ -17,7 +17,8 @@ from . import TEST_ARTIFACTS
 file_paths = [f'examples/{test_artifact}/{test_artifact}.tif' for test_artifact in TEST_ARTIFACTS]
 output_timespace_paths = [f'examples/{test_artifact}/timespace.npy' for test_artifact in TEST_ARTIFACTS]
 output_waves_paths = [f'examples/{test_artifact}/waves.npy' for test_artifact in TEST_ARTIFACTS]
-output_waves_binary_paths = [f'examples/{test_artifact}/labelled_waves.npy' for test_artifact in TEST_ARTIFACTS]
+output_waves_binary_paths = [
+    f'examples/{test_artifact}/labelled_waves.npy' for test_artifact in TEST_ARTIFACTS]
 output_waves_inds_paths = [f'examples/{test_artifact}/waves_inds.pck' for test_artifact in TEST_ARTIFACTS]
 
 example_dirs = [f'examples/{test_artifact}' for test_artifact in TEST_ARTIFACTS]
@@ -70,12 +71,12 @@ def test_metadata_generation(input_path, output_path):
     assert os.path.exists(os.path.join(output_path, 'segmentation_dims.h5'))
 
 
-@pytest.mark.run(order=6)
-@pytest.mark.parametrize('input_path',
-                         [input_path for input_path in example_dirs])
-def test_cleanup(input_path):
-    cleanup(input_path)
-    assert not os.path.exists(os.path.join(input_path, 'waves_inds.pck'))
+# @pytest.mark.run(order=6)
+# @pytest.mark.parametrize('input_path',
+#                          [input_path for input_path in example_dirs])
+# def test_cleanup(input_path):
+#     cleanup(input_path)
+#     assert not os.path.exists(os.path.join(input_path, 'waves_inds.pck'))
 
 
 @pytest.mark.run(order=7)
