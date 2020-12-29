@@ -1,3 +1,4 @@
+from scipy.ndimage import zoom
 import os
 import numpy as np
 from tqdm import tqdm
@@ -30,6 +31,8 @@ class MorphologyCreator():
         max_z = np.sum(segmentation, axis=2).max()
 
         shape[shape == 1] = 255
+        shape = zoom(shape, (0.5, 0.5, 0.5))
+
         sitk_img = sitk.GetImageFromArray(shape)
         sitk_mask = sitk.GetImageFromArray(segmentation)
         rs = RadiomicsShape(sitk_img, sitk_mask)

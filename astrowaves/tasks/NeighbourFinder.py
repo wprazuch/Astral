@@ -1,3 +1,4 @@
+from itertools import product
 from .. import config
 from scipy.ndimage import binary_fill_holes
 import os
@@ -29,7 +30,7 @@ class NeighbourFinder():
             shape = dimensions_df.loc[dimensions_df['id'] == i]
             candidate_neighbors = self.get_neighbor_shapes(shape, tolerance_xy, tolerance_z)
             candidate_ids = list(np.unique(candidate_neighbors.id.values))
-            neighbours_dict[i] = candidate_ids
+            neighbours_dict[i] = candidate_ids[1:]
 
         return neighbours_dict
 
@@ -192,6 +193,21 @@ class NeighbourFinder():
                     candidate_neighbor_dict.items()))
             dist_dict[shape_id] = filtered_candidate_dict
         return dist_dict
+
+    def get_bounding_box_cords(self, dim_df_row):
+        x_min = dim_df_row[config.DIMENSIONS_DF_COLUMNS['X_MIN']].values[0]
+        y_min = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Y_MIN']].values[0]
+        x_max = dim_df_row[config.DIMENSIONS_DF_COLUMNS['X_MAX']].values[0]
+        y_max = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Y_MAX']].values[0]
+
+        z_min = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Z_MIN']].values[0]
+        z_max = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Z_MAX']].values[0]
+
+        xy_cords = list(product([x_min, x_max], [y_min, y_max]))
+
+        z_cords = [z_min, z_max]
+
+        return xy_cords, z_cords
 
     def calculate_euc_dists(self, ddf, shape1, shape2):
         xy_axis1 = ddf.loc[ddf.id == shape1, ['center_y', 'center_x']].values

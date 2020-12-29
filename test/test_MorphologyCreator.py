@@ -1,6 +1,6 @@
 import pytest
 import os
-from astrowaves.tasks.NeighbourFinder import find_neighbors
+from astrowaves.tasks.MorphologyCreator import create_morphologies
 
 # hardcore_example_path = 'examples/Cont_AA_2_1_small_copy'  # r'examples/A_1_3_adj'
 hardcore_example_path = 'examples/A_1_3_adj_copy'
@@ -22,14 +22,14 @@ def output_path():
     return input_path1
 
 
-def test_neighbors_finding(input_path, output_path):
+def test_morphology_creation(input_path, output_path):
     try:
-        find_neighbors(input_path, output_path)
+        create_morphologies(input_path, output_path)
     except:
         assert False
 
-    assert os.path.exists(os.path.join(output_path, 'neighbors.csv'))
-    assert os.path.exists(os.path.join(output_path, 'neighbors_statistics.csv'))
+    assert os.path.exists(os.path.join(output_path, 'singles.csv'))
+    assert os.path.exists(os.path.join(output_path, 'repeats.csv'))
     # os.remove(os.path.join(output_path, 'neighbors.csv'))
     # os.remove(os.path.join(output_path, 'neighbors_statistics.csv'))
 

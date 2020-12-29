@@ -1,6 +1,6 @@
 import pytest
 import os
-from astrowaves.tasks.NeighbourFinder import find_neighbors
+from astrowaves.tasks.RepeatsFinder import find_repeats
 
 # hardcore_example_path = 'examples/Cont_AA_2_1_small_copy'  # r'examples/A_1_3_adj'
 hardcore_example_path = 'examples/A_1_3_adj_copy'
@@ -22,17 +22,11 @@ def output_path():
     return input_path1
 
 
-def test_neighbors_finding(input_path, output_path):
+def test_repeats_finding(input_path, output_path):
     try:
-        find_neighbors(input_path, output_path)
+        find_repeats(input_path, output_path)
     except:
         assert False
 
     assert os.path.exists(os.path.join(output_path, 'neighbors.csv'))
     assert os.path.exists(os.path.join(output_path, 'neighbors_statistics.csv'))
-    # os.remove(os.path.join(output_path, 'neighbors.csv'))
-    # os.remove(os.path.join(output_path, 'neighbors_statistics.csv'))
-
-
-if __name__ == '__main__':
-    pytest.main()

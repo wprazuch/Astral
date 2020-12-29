@@ -3,8 +3,8 @@ import os
 import pytest
 from astrowaves.tasks.MetadataGenerator import generate_metadata
 
-input_path1 = r'examples/Cont_AA_2_1_small'
-output_path1 = r'examples/tmp'
+input_path1 = r'examples\\Cont_AA_2_1_small'
+output_path1 = r'examples\\tmp'
 
 
 @pytest.fixture

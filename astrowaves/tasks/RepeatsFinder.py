@@ -27,7 +27,9 @@ class RepeatsFinder():
 
     def _get_z_projection(self, shape_id, abs_df):
         logging.debug('Getting z projection of shape {}'.format(shape_id))
-        proj = np.unique(abs_df.loc[abs_df['id'] == shape_id, ['x', 'y']].values.astype('int16'), axis=0)
+        shape_id_cords = abs_df.loc[abs_df['id'] == shape_id, ['x', 'y']]
+        proj = shape_id_cords.groupby(['x', 'y']).size(
+        ).reset_index().rename(columns={0: 'count'}).values[:, :2].astype(np.uint16)
         return proj
 
     def _intersection_over_union(self, shape1, shape2):
@@ -49,8 +51,8 @@ class RepeatsFinder():
         return np.nonzero(eq)[0]
 
     def _multidim_intersect(self, arr1, arr2):
-        arr1_view = arr1.view([('', arr1.dtype)]*arr1.shape[1])
-        arr2_view = arr2.view([('', arr2.dtype)]*arr2.shape[1])
+        arr1_view = arr1.copy().view([('', arr1.dtype)] * arr1.shape[1])
+        arr2_view = arr2.copy().view([('', arr2.dtype)] * arr2.shape[1])
         intersected = np.intersect1d(arr1_view, arr2_view)
         no_intersected = intersected.view(arr1.dtype).reshape(-1, arr1.shape[1]).shape[0]
         logging.debug(f'{no_intersected} points intersect!')
@@ -121,9 +123,10 @@ class RepeatsFinder():
         neighbors = neighbors_df.loc[neighbors_df['shape_id_1'] == shape_id]['shape_id_2'].values
         repeats = []
 
+        shape1_proj = self._get_z_projection(shape_id, absolute_df)
+
         for shape2_id in neighbors:
             logging.debug('Getting z projections...')
-            shape1_proj = self._get_z_projection(shape_id, absolute_df)
             shape2_proj = self._get_z_projection(shape2_id, absolute_df)
 
             logging.debug('Got projections')
