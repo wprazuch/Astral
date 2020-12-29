@@ -22,11 +22,11 @@ def output_path():
     return input_path1
 
 
-def test_repeats_finding(input_path, output_path):
-    try:
-        find_repeats(input_path, output_path)
-    except:
-        assert False
+# def test_repeats_finding(input_path, output_path):
+#     try:
+#         find_repeats(input_path, output_path)
+#     except:
+#         assert False
 
-    assert os.path.exists(os.path.join(output_path, 'neighbors.csv'))
-    assert os.path.exists(os.path.join(output_path, 'neighbors_statistics.csv'))
+#     assert os.path.exists(os.path.join(output_path, 'neighbors.csv'))
+#     assert os.path.exists(os.path.join(output_path, 'neighbors_statistics.csv'))

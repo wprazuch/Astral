@@ -71,12 +71,12 @@ def test_metadata_generation(input_path, output_path):
     assert os.path.exists(os.path.join(output_path, 'segmentation_dims.h5'))
 
 
-# @pytest.mark.run(order=6)
-# @pytest.mark.parametrize('input_path',
-#                          [input_path for input_path in example_dirs])
-# def test_cleanup(input_path):
-#     cleanup(input_path)
-#     assert not os.path.exists(os.path.join(input_path, 'waves_inds.pck'))
+@pytest.mark.run(order=6)
+@pytest.mark.parametrize('input_path',
+                         [input_path for input_path in example_dirs])
+def test_cleanup(input_path):
+    cleanup(input_path)
+    assert not os.path.exists(os.path.join(input_path, 'waves_inds.pck'))
 
 
 @pytest.mark.run(order=7)
@@ -110,19 +110,19 @@ def test_morphology_creation(input_path, output_path):
     assert os.path.exists(os.path.join(output_path, 'neighbors.csv'))
 
 
-# @pytest.mark.run(order=99)
-# @pytest.mark.parametrize('input_path',
-#                          [input_path for input_path in example_dirs])
-# def test_cleanup_example_dir(input_path):
-#     path_obj = Path(input_path)
-#     directory_name = path_obj.name
+@pytest.mark.run(order=99)
+@pytest.mark.parametrize('input_path',
+                         [input_path for input_path in example_dirs])
+def test_cleanup_example_dir(input_path):
+    path_obj = Path(input_path)
+    directory_name = path_obj.name
 
-#     files_to_delete = [file for file in os.listdir(input_path) if directory_name not in file]
+    files_to_delete = [file for file in os.listdir(input_path) if directory_name not in file]
 
-#     for file in files_to_delete:
-#         os.remove(os.path.join(input_path, file))
+    for file in files_to_delete:
+        os.remove(os.path.join(input_path, file))
 
-#     assert len(os.listdir(input_path)) == 1
+    assert len(os.listdir(input_path)) == 1
 
 
 if __name__ == '__main__':

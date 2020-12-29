@@ -22,16 +22,16 @@ def output_path():
     return input_path1
 
 
-def test_neighbors_finding(input_path, output_path):
-    try:
-        find_neighbors(input_path, output_path)
-    except:
-        assert False
+# def test_neighbors_finding(input_path, output_path):
+#     try:
+#         find_neighbors(input_path, output_path)
+#     except:
+#         assert False
 
-    assert os.path.exists(os.path.join(output_path, 'neighbors.csv'))
-    assert os.path.exists(os.path.join(output_path, 'neighbors_statistics.csv'))
-    # os.remove(os.path.join(output_path, 'neighbors.csv'))
-    # os.remove(os.path.join(output_path, 'neighbors_statistics.csv'))
+#     assert os.path.exists(os.path.join(output_path, 'neighbors.csv'))
+#     assert os.path.exists(os.path.join(output_path, 'neighbors_statistics.csv'))
+#     # os.remove(os.path.join(output_path, 'neighbors.csv'))
+#     # os.remove(os.path.join(output_path, 'neighbors_statistics.csv'))
 
 
 if __name__ == '__main__':

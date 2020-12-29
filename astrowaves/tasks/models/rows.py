@@ -24,3 +24,39 @@ class DimensionsRow:
                self.center_y, self.center_x, self.center_z, *list(self.center_of_mass_cords)]
 
         return row
+
+
+@dataclass
+class SinglesRow:
+    shape_id: int
+    max_x_size: float
+    max_y_size: float
+    max_z_size: float
+    max_xy_diameter: float
+    circularity: float
+
+    def get_row(self) -> List:
+        row = [self.shape_id, self.max_x_size, self.max_y_size,
+               self.max_z_size, self.max_xy_diameter, self.circularity]
+
+        return row
+
+
+@dataclass
+class RepeatsRow:
+    shape_ids: list
+    number_of_repeats: int
+    avg_maximum_x: float
+    avg_maximum_y: float
+    avg_maximum_z: float
+    avg_maximum_xy_diameter: float
+    median_inter_repeat_min_z_dist: float
+    median_inter_repeat_center_dist: float
+    avg_circularity: float
+
+    def get_row(self) -> List:
+        row = [self.shape_ids, self.number_of_repeats, self.avg_maximum_x,
+               self.avg_maximum_y, self.avg_maximum_z, self.avg_maximum_xy_diameter,
+               self.median_inter_repeat_min_z_dist, self.median_inter_repeat_center_dist, self.avg_circularity]
+
+        return row
