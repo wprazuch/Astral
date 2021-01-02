@@ -10,9 +10,6 @@ import logging
 
 class CalciumWaveDetector():
 
-    def __init__(self):
-        pass
-
     def _indices_label(self, array, label, offset):
         indices = np.argwhere(array == label)
         indices = [np.concatenate([elem[:-1], [elem[-1] + offset]]).tolist() for elem in indices]

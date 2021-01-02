@@ -15,18 +15,26 @@ logging.basicConfig(level=logging.INFO)
 
 class TimelapseCreator():
 
-    def __init__(self):
-        pass
+    def load_timelapse(self, path_to_file):
+        img = Image.open(path_to_file)
+        return img
 
-    def run(self, path_to_image=None):
-        img = Image.open(path_to_image)
-        no_frames = img.n_frames
-        timespace = np.zeros(shape=img.size[::-1] + (no_frames,))
+    def create_3d_space(self, timelapse):
+        no_frames = timelapse.n_frames
+        timespace = np.zeros(shape=timelapse.size[::-1] + (no_frames,))
         for i in tqdm(range(no_frames)):
-            img.seek(i)
-            slic = np.array(img)
+            timelapse.seek(i)
+            slic = np.array(timelapse)
             timespace[:, :, i] = slic
         timespace = timespace.astype('uint8')
+        return timespace
+
+    def run(self, path_to_file=None):
+
+        timelapse = self.load_timelapse(path_to_file)
+        timespace = self.create_3d_space(timelapse)
+        timespace = timespace.astype('uint8')
+
         return timespace
 
 
@@ -44,26 +52,17 @@ def main():
     output_path = os.path.join(rootdir, directory)
 
     ts_creator = TimelapseCreator()
-    timespace = ts_creator.run(input_path).astype('uint8')
+    timespace = ts_creator.run(input_path)
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
     np.save(os.path.join(output_path, 'timespace.npy'), timespace)
 
 
-def debug():
-    input_file = 'Cont_AN_2_4.tif'
-    directory = 'Cont_AN_2_4'
-    rootdir = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data'
-
-    input_path = os.path.join(rootdir, input_file)
-    output_path = os.path.join(rootdir, directory)
-
+def generate_timespace(input_tiff_file_path, output_file_path):
     ts_creator = TimelapseCreator()
-    timespace = ts_creator.run(input_path).astype('uint8')
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    np.save(os.path.join(output_path, 'timespace.npy'), timespace)
+    timespace = ts_creator.run(input_tiff_file_path).astype('uint8')
+    np.save(output_file_path, timespace)
 
 
 if __name__ == '__main__':

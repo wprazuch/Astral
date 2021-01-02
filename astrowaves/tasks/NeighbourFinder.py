@@ -1,3 +1,6 @@
+from itertools import product
+from .. import config
+from scipy.ndimage import binary_fill_holes
 import os
 import numpy as np
 import pandas as pd
@@ -10,16 +13,57 @@ from collections import defaultdict
 from scipy import ndimage
 from operator import add
 import argparse
+from joblib import Parallel, delayed
 
 
 class NeighbourFinder():
 
-    def __init__(self):
-        pass
-
     def _get_z_projection(self, shape_id, abs_df):
         proj = np.unique(abs_df.loc[abs_df['id'] == shape_id, ['x', 'y']].values.astype('int16'), axis=0)
         return proj
+
+    def get_bounding_box_neighbours(self, dimensions_df, tolerance_xy, tolerance_z):
+        neighbours_dict = defaultdict(dict)
+        ids = np.unique(dimensions_df.id.values)
+        for i in tqdm(ids):
+
+            shape = dimensions_df.loc[dimensions_df['id'] == i]
+            candidate_neighbors = self.get_neighbor_shapes(shape, tolerance_xy, tolerance_z)
+            candidate_ids = list(np.unique(candidate_neighbors.id.values))
+            neighbours_dict[i] = candidate_ids[1:]
+
+        return neighbours_dict
+
+    def generate_neighbor_row(self, shape1_id, shape2_id, dims_df_chunk):
+        center_dist_xy, center_dist_z = self.calculate_euc_dists(dims_df_chunk, shape1_id, shape2_id)
+
+        com_dist_xy, com_dist_t = self.calculate_center_of_mass_dists(
+            dims_df_chunk, shape1_id, shape2_id)
+
+        # row_dict = {
+        #     'shape_id_1': shape1_id,
+        #     'shape_id_2': shape2_id,
+        #     'center_dist_xy': center_dist_xy,
+        #     'center_dist_t': center_dist_z,
+        #     'center_of_mass_dist_xy': com_dist_xy,
+        #     'center_of_mass_dist_t': com_dist_t
+        # }
+
+        row = [shape1_id, shape2_id, center_dist_xy, center_dist_z, com_dist_xy, com_dist_t]
+
+        return row
+
+    def generate_neighbour_data_for(self, shape1_id, neighbour_ids):
+
+        dims_df_chunk = self.dimensions_df.loc[(self.dimensions_df['id'] == shape1_id) |
+                                               (self.dimensions_df['id'].isin(neighbour_ids))]
+
+        shape1_id_row_data = []
+
+        for shape2_id in neighbour_ids:
+            shape1_id_row = self.generate_neighbor_row(shape1_id, shape2_id, dims_df_chunk)
+            shape1_id_row_data.append(shape1_id_row)
+        return shape1_id_row_data
 
     def run(self, tolerance_xy, tolerance_z, absolute_df, dimensions_df):
 
@@ -28,30 +72,25 @@ class NeighbourFinder():
         self.dimensions_df = dimensions_df
         self.absolute_df = absolute_df
 
-        dist_dict = self.get_candidate_neighbors_dict(dimensions_df, absolute_df, tolerance_xy, tolerance_z)
-        dist_dict = self.filter_distant_neighbors(dist_dict, tolerance_xy, tolerance_z)
+        neighbors_dict = self.get_bounding_box_neighbours(dimensions_df, tolerance_xy, tolerance_z)
 
-        dist_df = pd.DataFrame(columns=['shape_id_1', 'shape_id_2', 'center_dist_xy',
-                                        'center_dist_t', 'center_of_mass_dist_xy', 'center_of_mass_dist_t'])
+        row_data = []
 
-        for shape_id, neighbor_dict in tqdm(dist_dict.items()):
-            shape1 = shape_id
-            for shape2 in neighbor_dict.keys():
-                center_dist_xy, center_dist_z = self.calculate_euc_dists(dimensions_df, shape1, shape2)
+        for shape1, neighbour_ids in tqdm(neighbors_dict.items()):
 
-                com_dist_xy, com_dist_t = self.calculate_com_dists(dimensions_df, absolute_df, shape1, shape2)
+            shape1_neighbor_data = self.generate_neighbour_data_for(shape1, neighbour_ids)
 
-                row = {
-                    'shape_id_1': shape1,
-                    'shape_id_2': shape2,
-                    'center_dist_xy': center_dist_xy,
-                    'center_dist_t': center_dist_z,
-                    'center_of_mass_dist_xy': com_dist_xy,
-                    'center_of_mass_dist_t': com_dist_t
-                }
+            row_data.extend(shape1_neighbor_data)
 
-                dist_df = dist_df.append(row, ignore_index=True)
+            # dist_df = dist_df.append(row_dict, ignore_index=True)
+
+        dist_df = pd.DataFrame(
+            columns=['shape_id_1', 'shape_id_2', 'center_dist_xy', 'center_dist_t',
+                     'center_of_mass_dist_xy', 'center_of_mass_dist_t'],
+            data=row_data)
         dist_df = dist_df.astype('int')
+        dist_df = dist_df.sort_values(by=['shape_id_1'])
+
         return dist_df
 
     def get_tolerance_bounding_box(self, shape, tolerance_xy, tolerance_z):
@@ -79,6 +118,28 @@ class NeighbourFinder():
 
         return neighbor_shapes
 
+    def find_contours(self, shape_xy):
+        max_y = shape_xy['y'].max() + 1
+        max_x = shape_xy['x'].max() + 1
+
+        placeholder = np.zeros((max_x, max_y))
+
+        cords = shape_xy.values
+
+        placeholder[cords[:, 0], cords[:, 1]] = 1
+
+        placeholder = placeholder.astype(np.uint8)
+        filled = binary_fill_holes(placeholder)
+        filled = filled.astype(np.uint8)
+
+        contours = cv2.findContours(filled, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
+        contours = contours[0]
+        cnt = np.zeros(placeholder.shape)
+        cnt[contours[:, 0, 1], contours[:, 0, 0]] = 1
+
+        contour_cords = np.argwhere(cnt != 0)
+        return contour_cords
+
     def get_candidate_neighbors_dict(self, ddf, adf, tolerance_xy, tolerance_z):
 
         min_dist_dict = defaultdict(dict)
@@ -93,28 +154,31 @@ class NeighbourFinder():
 
             candidate_ids = np.unique(candidate_neighbors.id.values)
 
+            shape1 = adf.loc[adf['id'] == i]
+            shape1 = shape1[['x', 'y', 'z']]
+            shape1_xy = shape1[['x', 'y']]
+            shape1_xy = self.find_contours(shape1_xy)
+            shape1_z = np.unique(shape1[['z']].values)
+            shape1_z = np.expand_dims(shape1_z, 1)
+
             for j in candidate_ids:
                 if i != j:
-                    shape1 = adf.loc[adf['id'] == i]
+
                     shape2 = adf.loc[adf['id'] == j]
-                    shape1 = shape1[['x', 'y', 'z']]
+
                     shape2 = shape2[['x', 'y', 'z']]
                     # border1 = get_border_inds(shape1)
                     # border2 = get_border_inds(shape2)
 
-                    shape1_xy = shape1[['x', 'y']]
                     shape2_xy = shape2[['x', 'y']]
-
-                    shape1_z = np.unique(shape1[['z']].values)
+                    shape2_xy = self.find_contours(shape2_xy)
                     shape2_z = np.unique(shape2[['z']].values)
-
-                    shape1_z = np.expand_dims(shape1_z, 1)
                     shape2_z = np.expand_dims(shape2_z, 1)
 
                     min_dists_xy, min_dist_idx_xy = cKDTree(shape1_xy).query(shape2_xy, 1)
                     min_dists_z, min_dist_idx_z = cKDTree(shape1_z).query(shape2_z, 1)
         #            min_dists, min_dist_idx = cKDTree(border1).query(border2, 1)
-                    #min_dists = (min_dists_xy.min(), min_dists_z.min())
+                    # min_dists = (min_dists_xy.min(), min_dists_z.min())
 
                     min_dist_dict[i][j] = (min_dists_xy.min(), min_dists_z.min())
                     min_dist_dict[j][i] = (min_dists_xy.min(), min_dists_z.min())
@@ -130,6 +194,21 @@ class NeighbourFinder():
             dist_dict[shape_id] = filtered_candidate_dict
         return dist_dict
 
+    def get_bounding_box_cords(self, dim_df_row):
+        x_min = dim_df_row[config.DIMENSIONS_DF_COLUMNS['X_MIN']].values[0]
+        y_min = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Y_MIN']].values[0]
+        x_max = dim_df_row[config.DIMENSIONS_DF_COLUMNS['X_MAX']].values[0]
+        y_max = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Y_MAX']].values[0]
+
+        z_min = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Z_MIN']].values[0]
+        z_max = dim_df_row[config.DIMENSIONS_DF_COLUMNS['Z_MAX']].values[0]
+
+        xy_cords = list(product([x_min, x_max], [y_min, y_max]))
+
+        z_cords = [z_min, z_max]
+
+        return xy_cords, z_cords
+
     def calculate_euc_dists(self, ddf, shape1, shape2):
         xy_axis1 = ddf.loc[ddf.id == shape1, ['center_y', 'center_x']].values
         xy_axis2 = ddf.loc[ddf.id == shape2, ['center_y', 'center_x']].values
@@ -144,75 +223,50 @@ class NeighbourFinder():
 
         return center_dist_xy, center_dist_z
 
-    def calculate_com_dists(self, ddf, adf, shape1_id, shape2_id):
+    def calculate_center_of_mass_dists(self, ddf, shape1_id, shape2_id):
 
-        shape1 = adf.loc[adf['id'] == shape1_id]
-        shape2 = adf.loc[adf['id'] == shape2_id]
-        shapes = [shape1, shape2]
+        z1 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] ==
+                     shape1_id, config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Z']].values
+        z2 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] ==
+                     shape2_id, config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Z']].values
 
-        shapes = list(map(lambda df: df[['x', 'y', 'z']], shapes))
+        xy1 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] == shape1_id,
+                      [config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_X'],
+                       config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Y']]].values
 
-        offsets = []
+        xy2 = ddf.loc[ddf[config.DIMENSIONS_DF_COLUMNS['ID']] == shape2_id,
+                      [config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_X'],
+                       config.DIMENSIONS_DF_COLUMNS['CENTER_OF_MASS_Y']]].values
 
-        coms = []
-
-        for shape in shapes:
-            offsets.append([shape.x.min(), shape.y.min(), shape.z.min()])
-            shape.x = shape.x - shape.x.min()
-            shape.y = shape.y - shape.y.min()
-            shape.z = shape.z - shape.z.min()
-
-            indices = shape.values
-
-            shape_np = np.zeros(((indices[:, 0].max() + 1, indices[:, 1].max() + 1, indices[:, 2].max() + 1)))
-
-            for i in range(indices.shape[0]):
-                shape_np[indices[i, 0], indices[i, 1], indices[i, 2]] = 1
-
-            # print(np.unique(shape_np))
-            com = ndimage.measurements.center_of_mass(shape_np)
-            # print(com)
-            com = list(map(lambda x: int(x), com))
-            coms.append(com)
-
-        coms_offset = []
-
-        for com, offset in zip(coms, offsets):
-            coms_offset.append(list(map(add, com, offset)))
-
-        xy1, xy2 = coms_offset[0][:2], coms_offset[1][:2]
-        xy1, xy2 = np.array(xy1), np.array(xy2)
-        xy1, xy2 = np.expand_dims(xy1, -1).T, np.expand_dims(xy2, -1).T
-        z1, z2 = coms_offset[0][2], coms_offset[1][2]
-
-        com_dist_z = abs(z1-z2)
+        com_dist_z = abs(z1 - z2)
         com_dist_xy = cdist(xy1, xy2)[0][0]
 
         return com_dist_xy, com_dist_z
 
-    def generate_df(self, dist_dict):
-        dist_df = pd.DataFrame(columns=['shape_id_1', 'shape_id_2', 'center_dist_xy',
-                                        'center_dist_t', 'center_of_mass_dist_xy', 'center_of_mass_dist_t'])
 
-        for shape_id, neighbor_dict in tqdm(dist_dict.items()):
-            shape1 = shape_id
-            for shape2 in neighbor_dict.keys():
-                center_dist_xy, center_dist_z = self.calculate_euc_dists(ddf, shape1, shape2)
+def calculate_neighbors_statistics(dict_df):
+    ne2 = dict_df.groupby('shape_id_1').count().iloc[:, :1]
+    ne3 = dict_df.groupby('shape_id_1').mean().iloc[:, -2:]
 
-                com_dist_xy, com_dist_z = self.calculate_com_dists(ddf, adf, shape1, shape2)
+    neighbors_stat_df = pd.merge(ne2, ne3, right_index=True, left_index=True)
+    neighbors_stat_df.index.Name = 'id'
+    neighbors_stat_df.columns = ['n_neighbors', 'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']
+    neighbors_stat_df['id'] = neighbors_stat_df.index
+    neighbors_stat_df = neighbors_stat_df[['id', 'n_neighbors',
+                                           'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']]
 
-                row = {
-                    'shape_id_1': shape1,
-                    'shape_id_2': shape2,
-                    'center_dist_xy': center_dist_xy,
-                    'center_dist_t': center_dist_z,
-                    'center_of_mass_dist_xy': com_dist_xy,
-                    'center_of_mass_dist_t': com_dist_z
-                }
+    return neighbors_stat_df
 
-                dist_df = dist_df.append(row, ignore_index=True)
-        dist_df = dist_df.astype('int')
-        return dist_df
+
+def find_neighbors(input_path, output_path, tolerance_xy=30, tolerance_z=20):
+    absolute_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5'))
+    dims_df = pd.read_hdf(os.path.join(input_path, 'segmentation_dims.h5'))
+    nfinder = NeighbourFinder()
+    dict_df = nfinder.run(tolerance_xy, tolerance_z, absolute_df, dims_df)
+    dict_df.to_csv(os.path.join(output_path, 'neighbors.csv'), index=False)
+
+    neighbors_stat_df = calculate_neighbors_statistics(dict_df)
+    neighbors_stat_df.to_csv(os.path.join(output_path, 'neighbors_statistics.csv'), index=False)
 
 
 def parse_args():
@@ -230,52 +284,16 @@ def main():
     tolerance_z = int(args.tolerance_t)
     directory = args.directory
     root_dir = args.rootdir
-    path = os.path.join(root_dir, directory)
+    input_path = os.path.join(root_dir, directory)
 
-    absolute_df = pd.read_hdf(os.path.join(path, 'segmentation_absolute.h5'))
-    dims_df = pd.read_hdf(os.path.join(path, 'segmentation_dims.h5'))
+    absolute_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5'))
+    dims_df = pd.read_hdf(os.path.join(input_path, 'segmentation_dims.h5'))
     nfinder = NeighbourFinder()
     dict_df = nfinder.run(tolerance_xy, tolerance_z, absolute_df, dims_df)
-    dict_df = dict_df.sort_values(by=['shape_id_1'])
-    dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
+    dict_df.to_csv(os.path.join(input_path, 'neighbors.csv'), index=False)
 
-    ne2 = dict_df.groupby('shape_id_1').count().iloc[:, :1]
-    ne3 = dict_df.groupby('shape_id_1').mean().iloc[:, -2:]
-
-    neighbors_stat_df = pd.merge(ne2, ne3, right_index=True, left_index=True)
-    neighbors_stat_df.index.Name = 'id'
-    neighbors_stat_df.columns = ['n_neighbors', 'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']
-    neighbors_stat_df['id'] = neighbors_stat_df.index
-    neighbors_stat_df = neighbors_stat_df[['id', 'n_neighbors',
-                                           'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']]
-    neighbors_stat_df.to_csv(os.path.join(path, 'neighbors_statistics.csv'), index=False)
-
-
-def debug():
-    args = parse_args()
-
-    directory = 'Cont_AN_2_4'
-    root_dir = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data'
-    path = os.path.join(root_dir, directory)
-
-    absolute_df = pd.read_hdf(os.path.join(path, 'segmentation_absolute.h5'))
-    dims_df = pd.read_hdf(os.path.join(path, 'segmentation_dims.h5'))
-
-    nfinder = NeighbourFinder()
-    dict_df = nfinder.run(50, 100, absolute_df, dims_df)
-    dict_df = dict_df.sort_values(by=['shape_id_1'])
-    dict_df.to_csv(os.path.join(path, 'neighbors.csv'), index=False)
-
-    ne2 = dict_df.groupby('shape_id_1').count().iloc[:, :1]
-    ne3 = dict_df.groupby('shape_id_1').mean().iloc[:, -2:]
-
-    neighbors_stat_df = pd.merge(ne2, ne3, right_index=True, left_index=True)
-    neighbors_stat_df.index.Name = 'id'
-    neighbors_stat_df.columns = ['n_neighbors', 'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']
-    neighbors_stat_df['id'] = neighbors_stat_df.index
-    neighbors_stat_df = neighbors_stat_df[['id', 'n_neighbors',
-                                           'avg_xy_dist_center-of-mass', 'avg_t_interval_center-of-mass']]
-    neighbors_stat_df.to_csv(os.path.join(path, 'neighbors_statistics.csv'), index=False)
+    neighbors_stat_df = calculate_neighbors_statistics(dict_df)
+    neighbors_stat_df.to_csv(os.path.join(input_path, 'neighbors_statistics.csv'), index=False)
 
 
 if __name__ == '__main__':

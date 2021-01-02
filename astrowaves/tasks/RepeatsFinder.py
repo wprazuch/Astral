@@ -12,9 +12,6 @@ import logging
 
 class RepeatsFinder():
 
-    def __init__(self):
-        pass
-
     def _do_overlap(self, shape1, shape2, threshold):
         logging.debug('Inside _do_overlap')
         no_intersected = self._multidim_intersect(shape1, shape2)
@@ -30,7 +27,9 @@ class RepeatsFinder():
 
     def _get_z_projection(self, shape_id, abs_df):
         logging.debug('Getting z projection of shape {}'.format(shape_id))
-        proj = np.unique(abs_df.loc[abs_df['id'] == shape_id, ['x', 'y']].values.astype('int16'), axis=0)
+        shape_id_cords = abs_df.loc[abs_df['id'] == shape_id, ['x', 'y']]
+        proj = shape_id_cords.groupby(['x', 'y']).size(
+        ).reset_index().rename(columns={0: 'count'}).values[:, :2].astype(np.uint16)
         return proj
 
     def _intersection_over_union(self, shape1, shape2):
@@ -52,8 +51,8 @@ class RepeatsFinder():
         return np.nonzero(eq)[0]
 
     def _multidim_intersect(self, arr1, arr2):
-        arr1_view = arr1.view([('', arr1.dtype)]*arr1.shape[1])
-        arr2_view = arr2.view([('', arr2.dtype)]*arr2.shape[1])
+        arr1_view = arr1.copy().view([('', arr1.dtype)] * arr1.shape[1])
+        arr2_view = arr2.copy().view([('', arr2.dtype)] * arr2.shape[1])
         intersected = np.intersect1d(arr1_view, arr2_view)
         no_intersected = intersected.view(arr1.dtype).reshape(-1, arr1.shape[1]).shape[0]
         logging.debug(f'{no_intersected} points intersect!')
@@ -99,22 +98,13 @@ class RepeatsFinder():
         for shape1_id in tqdm(ids):
             #     print(f"Shape1 id: {shape1_id}")
             logging.debug('Getting all neighbours of shape %s' % shape1_id)
-            neighbors = neighbor_df.loc[neighbor_df['shape_id_1'] == shape1_id]['shape_id_2'].values
-        #     print(f"Neighbors : {neighbors}")
-            for shape2_id in neighbors:
-                #         print(f"Shape2 id: {shape2_id}")
-                logging.debug('Getting z projections...')
-                shape1_proj = self._get_z_projection(shape1_id, abs_df)
-                shape2_proj = self._get_z_projection(shape2_id, abs_df)
 
-                logging.debug('Got projections')
-                if self._do_overlap(shape1_proj, shape2_proj, threshold):
-                    logging.debug('Found repeat')
-                    repeats[shape1_id].append(shape2_id)
-                else:
-                    logging.debug('Next...')
-            if not repeats[shape1_id]:
+            shape1_id_repeats = self.search_for_repeats_of(shape1_id, neighbor_df, abs_df, threshold)
+
+            if len(shape1_id_repeats) == 0:
                 singles.append(shape1_id)
+            else:
+                repeats[shape1_id] = shape1_id_repeats
 
         if repeats:
             repeats_uq = {key: value for key, value in repeats.items() if value}
@@ -129,6 +119,42 @@ class RepeatsFinder():
         else:
             return singles, []
 
+    def search_for_repeats_of(self, shape_id, neighbors_df, absolute_df, threshold):
+        neighbors = neighbors_df.loc[neighbors_df['shape_id_1'] == shape_id]['shape_id_2'].values
+        repeats = []
+
+        shape1_proj = self._get_z_projection(shape_id, absolute_df)
+
+        for shape2_id in neighbors:
+            logging.debug('Getting z projections...')
+            shape2_proj = self._get_z_projection(shape2_id, absolute_df)
+
+            logging.debug('Got projections')
+            if self._do_overlap(shape1_proj, shape2_proj, threshold):
+                logging.debug('Found repeat')
+                repeats.append(shape2_id)
+            else:
+                logging.debug('Next...')
+
+        return repeats
+
+
+def find_repeats(input_path, output_path, intersect_threshold=0.8):
+    abs_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5')).astype('int16')
+    abs_df = abs_df[['id', 'x', 'y']]
+
+    neighbors_df = pd.read_csv(os.path.join(input_path, 'neighbors.csv')).astype('int16')
+
+    repeats_finder = RepeatsFinder()
+
+    singles, repeats = repeats_finder.run(intersect_threshold, abs_df, neighbors_df)
+
+    with open(os.path.join(output_path, 'singles.pickle'), 'wb') as handle:
+        pickle.dump(singles, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open(os.path.join(output_path, 'repeats.pickle'), 'wb') as handle:
+        pickle.dump(repeats, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(prog='RepeatsFinder')
@@ -138,39 +164,21 @@ def parse_args():
     return parser.parse_args()
 
 
-def debug():
-    args = parse_args()
-    root_dir = r'C:\Users\Wojtek\Documents\Doktorat\Astral\data'
-    directory = 'Cont_AA_1_2'
-    directory_path = os.path.join(root_dir, directory)
-    abs_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_absolute.h5')).astype('int16')
-    abs_df = abs_df[['id', 'x', 'y']]
-    neighbors_df = pd.read_csv(os.path.join(directory_path, 'neighbors.csv')).astype('int16')
-    repeats_finder = RepeatsFinder()
-    singles, repeats = repeats_finder.run(0.8, abs_df, neighbors_df)
-
-    with open(r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\singles.pickle', 'wb') as handle:
-        pickle.dump(singles, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    with open(r'C:\Users\Wojtek\Documents\Doktorat\Astral\data\repeats.pickle', 'wb') as handle:
-        pickle.dump(repeats, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
 def main():
     args = parse_args()
     root_dir = args.rootdir
     directory = args.directory
 
     intersect_threshold = float(args.intersect_threshold)
-    directory_path = os.path.join(root_dir, directory)
+    input_path = os.path.join(root_dir, directory)
 
-    logging.basicConfig(filename=os.path.join(directory_path, 'logging.log'), level=logging.DEBUG)
+    logging.basicConfig(filename=os.path.join(input_path, 'logging.log'), level=logging.DEBUG)
     logging.info('Starting RepeatsFinder')
 
-    abs_df = pd.read_hdf(os.path.join(directory_path, 'segmentation_absolute.h5')).astype('int16')
+    abs_df = pd.read_hdf(os.path.join(input_path, 'segmentation_absolute.h5')).astype('int16')
     abs_df = abs_df[['id', 'x', 'y']]
 
-    neighbors_df = pd.read_csv(os.path.join(directory_path, 'neighbors.csv')).astype('int16')
+    neighbors_df = pd.read_csv(os.path.join(input_path, 'neighbors.csv')).astype('int16')
 
     logging.info('Loaded metadata neighbors and absolute voxels indices.')
 
@@ -181,10 +189,10 @@ def main():
 
     logging.info('Pickling singles and repeats...')
 
-    with open(os.path.join(directory_path, 'singles.pickle'), 'wb') as handle:
+    with open(os.path.join(input_path, 'singles.pickle'), 'wb') as handle:
         pickle.dump(singles, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(directory_path, 'repeats.pickle'), 'wb') as handle:
+    with open(os.path.join(input_path, 'repeats.pickle'), 'wb') as handle:
         pickle.dump(repeats, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     logging.info('Done.')
