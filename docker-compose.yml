@@ -13,7 +13,7 @@ services:
       - "8080:8080"
     volumes:
       - .:/app
-      - D:\Astral\data:/app/data
+      - <path-to-data-directory>:/app/data
     command: webserver
     
   streamlit:
@@ -29,5 +29,5 @@ services:
       - "8501:8501"
     volumes:
       - .:/app
-      - D:\Astral\data:/app/data
+      - <path-to-data-directory>:/app/data
     command: "streamlit run ./astrowaves/streamlit/dashboard.py -- --path 'data/'"
