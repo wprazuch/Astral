@@ -68,14 +68,13 @@ for file in files:
         weight_rule=WeightRule.UPSTREAM
     )
 
-    standard_deviation_threshold = Variable.get("standard_deviation_threshold")
+    standard_deviation_threshold = Variable.get("sd_threshold")
     use_watershed = Variable.get("use_watershed")
     t4 = BashOperator(
         task_id=f'create_masks_{directory}', depends_on_past=False,
         bash_command=f'python -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory} --use_watershed {use_watershed}',
         dag=dag, weight_rule=WeightRule.UPSTREAM)
 
-    # t1 >> t2 >> t3 >> t4 >> t5 >> t6 >> t7
     t1 >> t3 >> t4
 
 dag.doc_md = __doc__

@@ -51,7 +51,7 @@ else:
 
 tolerance_xy = Variable.get("tolerance_xy")
 tolerance_t = Variable.get("tolerance_t")
-intersect_threshold = Variable.get("intersect_threshold")
+intersect_threshold = Variable.get("intersection_threshold")
 
 
 for file in files:
