@@ -1,6 +1,9 @@
 import os
 
 
+ROOT_DIR = "/app/data"
+
+
 ABS_DF_COLUMNS = {
     'ID': 'id',
     'Y': 'y',
