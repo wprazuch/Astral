@@ -1,4 +1,6 @@
+# Exclude VSCode settings
 /.vscode/*
+
 /debug/debug_data/*
 /**/*.pyc
 /**/*-checkpoint.ipynb
@@ -7,3 +9,6 @@ data/**/*
 debug/**/*
 test/test_data/*
 examples
+
+# Exclude virtual environment from tracking
+.venv-astral

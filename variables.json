@@ -6,5 +6,7 @@
 	"grain_size": 1,
 	"tolerance_xy": 20,
 	"tolerance_t": 4,
-	"intersection_threshold": 0.8
+	"intersection_threshold": 0.8,
+	"intensity_correction_method" : "f0",
+	"drift_correction_window_size" : 100
 }

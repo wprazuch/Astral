@@ -1,22 +1,25 @@
 from datetime import timedelta
+
 # The DAG object; we'll need this to instantiate a DAG
 from airflow import DAG
+
 # Operators; we need this to operate!
 from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import os
+from astrowaves.airflow.utils import process_task_name
 
 
 default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'start_date': days_ago(1),
-    'email': ['airflow@example.com'],
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "airflow",
+    "depends_on_past": False,
+    "start_date": days_ago(1),
+    "email": ["airflow@example.com"],
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
     # 'queue': 'bash_queue',
     # 'pool': 'backfill',
     # 'priority_weight': 10,
@@ -34,18 +37,18 @@ default_args = {
 
 
 dag = DAG(
-    '3_find_neighbours',
+    "3_find_neighbours",
     default_args=default_args,
-    description='Find neighbouring waves in a timespace',
+    description="Find neighbouring waves in a timespace",
     schedule_interval=timedelta(days=1),
 )
 
-rootdir = '/app/data'
+rootdir = "/app/data"
 
 filename = Variable.get("filename")
 
-if filename == 'all':
-    files = [file for file in os.listdir(rootdir) if file.endswith('.tif')]
+if filename == "all":
+    files = [file for file in os.listdir(rootdir) if file.endswith(".tif")]
 else:
     files = [filename]
 
@@ -56,24 +59,29 @@ intersect_threshold = Variable.get("intersection_threshold")
 
 for file in files:
     filename = file
-    directory = filename.split('.')[0]
+    directory = filename.split(".")[0]
+    directory = process_task_name(directory)
 
-    # t1, t2 and t3 are examples of tasks created by instantiating operators
+    # The task to find neighbours for each event
     t1 = BashOperator(
-        task_id=f'find_neighbors_{directory}',
-        bash_command=f'python -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_t {tolerance_t}',
+        task_id=f"find_neighbors_{directory}",
+        bash_command=f"python -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_t {tolerance_t}",
         dag=dag,
     )
 
+    # The task to find repeats among neighbour events for a given event
     t2 = BashOperator(
-        task_id=f'find_repeats_{directory}',
-        bash_command=f'python -m astrowaves.tasks.RepeatsFinder --directory {directory} --intersect_threshold {intersect_threshold}',
-        dag=dag,)
+        task_id=f"find_repeats_{directory}",
+        bash_command=f"python -m astrowaves.tasks.RepeatsFinder --directory {directory} --intersect_threshold {intersect_threshold}",
+        dag=dag,
+    )
 
+    # The task to generate output csv for repeats and neighbours
     t3 = BashOperator(
-        task_id=f'generate_csvs_{directory}',
-        bash_command=f'python -m astrowaves.tasks.MorphologyCreator --directory {directory}',
-        dag=dag,)
+        task_id=f"generate_csvs_{directory}",
+        bash_command=f"python -m astrowaves.tasks.MorphologyCreator --directory {directory}",
+        dag=dag,
+    )
 
     t1 >> t2 >> t3
 # t1 >>

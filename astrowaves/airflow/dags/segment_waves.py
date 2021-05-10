@@ -1,22 +1,26 @@
 from datetime import timedelta
+
 # The DAG object; we'll need this to instantiate a DAG
 from airflow import DAG
+
 # Operators; we need this to operate!
 from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import os
+from astrowaves.airflow.utils import process_task_name
+
 # These args will get passed on to each operator
 # You can override them on a per-task basis during operator initialization
 default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'start_date': days_ago(1),
-    'email': ['airflow@example.com'],
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "airflow",
+    "depends_on_past": False,
+    "start_date": days_ago(1),
+    "email": ["airflow@example.com"],
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
     # 'queue': 'bash_queue',
     # 'pool': 'backfill',
     # 'priority_weight': 10,
@@ -32,45 +36,49 @@ default_args = {
     # 'trigger_rule': 'all_success'
 }
 dag = DAG(
-    '2_segment_waves',
+    "2_segment_waves",
     default_args=default_args,
-    description='A simple tutorial DAG',
+    description="A simple tutorial DAG",
     schedule_interval=timedelta(days=1),
 )
 
 
-rootdir = '/app/data'
+rootdir = "/app/data"
 
 filename = Variable.get("filename")
 
-if filename == 'all':
-    files = [file for file in os.listdir(rootdir) if file.endswith('.tif')]
+if filename == "all":
+    files = [file for file in os.listdir(rootdir) if file.endswith(".tif")]
 else:
     files = [filename]
 
 for file in files:
     filename = file
-    directory = filename.split('.')[0]
+    directory = filename.split(".")[0]
+    directory = process_task_name(directory)
 
     volume_threshold = Variable.get("volume_threshold")
+    # The task to label all the events in the timelapse
     t5 = BashOperator(
-        task_id=f'label_waves_{directory}',
+        task_id=f"label_waves_{directory}",
         depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.WaveLabeller --volume_threshold {volume_threshold} --directory {directory}',
+        bash_command=f"python -m astrowaves.tasks.WaveLabeller --volume_threshold {volume_threshold} --directory {directory}",
         dag=dag,
     )
 
+    # The task to generate metadata for each event - its size, length in each direction, intensity, shape
     t6 = BashOperator(
-        task_id=f'generate_metadata_{directory}',
+        task_id=f"generate_metadata_{directory}",
         depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.MetadataGenerator --directory {directory}',
+        bash_command=f"python -m astrowaves.tasks.MetadataGenerator --directory {directory}",
         dag=dag,
     )
 
+    # the task to cleanup temporary files
     t7 = BashOperator(
-        task_id=f'cleanup_{directory}',
+        task_id=f"cleanup_{directory}",
         depends_on_past=False,
-        bash_command=f'python -m astrowaves.tasks.CleanupMetadata --directory {directory}',
+        bash_command=f"python -m astrowaves.tasks.CleanupMetadata --directory {directory}",
         dag=dag,
     )
 
