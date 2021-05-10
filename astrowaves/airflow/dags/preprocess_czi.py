@@ -8,6 +8,7 @@ from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import os
+from astrowaves.config import ROOT_DATA_DIR
 from astrowaves.airflow.utils import process_task_name
 
 
@@ -37,51 +38,42 @@ default_args = {
 
 
 dag = DAG(
-    "3_find_neighbours",
+    "0_preprocess_czi",
     default_args=default_args,
-    description="Find neighbouring waves in a timespace",
+    description="Preprocess CZI files by correcting movement and F0 correction",
     schedule_interval=timedelta(days=1),
 )
-
-rootdir = "/app/data"
 
 filename = Variable.get("filename")
 
 if filename == "all":
-    files = [file for file in os.listdir(rootdir) if file.endswith(".tif")]
+    files = [file for file in os.listdir(ROOT_DATA_DIR) if file.endswith(".czi")]
 else:
     files = [filename]
 
-tolerance_xy = Variable.get("tolerance_xy")
-tolerance_t = Variable.get("tolerance_t")
-intersect_threshold = Variable.get("intersection_threshold")
+intensity_correction_method = Variable.get("intensity_correction_method")
+drift_correction_window_size = Variable.get("drift_correction_window_size")
 
 
 for file in files:
-    filename = file
-    directory = filename.split(".")[0]
-    directory = process_task_name(directory)
 
-    # The task to find neighbours for each event
+    filename = os.path.join(ROOT_DATA_DIR, file)
+    name = process_task_name(file)
+
+    tiff_filename = filename + ".tif"
+
+    # The task for performing f0 correction - either f0 or PAFFT
     t1 = BashOperator(
-        task_id=f"find_neighbors_{directory}",
-        bash_command=f"python -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_t {tolerance_t}",
+        task_id=f"correct_intensity_{name}",
+        bash_command=f'python -m astrowaves.tasks.preprocessing.IntensityCorrector perform_intensity_correction "{filename}" --method {intensity_correction_method}',
         dag=dag,
     )
 
-    # The task to find repeats among neighbour events for a given event
+    # The task to perform drift correction for the timelapse
     t2 = BashOperator(
-        task_id=f"find_repeats_{directory}",
-        bash_command=f"python -m astrowaves.tasks.RepeatsFinder --directory {directory} --intersect_threshold {intersect_threshold}",
+        task_id=f"correct_drift_{name}",
+        bash_command=f'python -m astrowaves.tasks.preprocessing.DriftCorrector perform_drift_correction "{tiff_filename}" --window_size {drift_correction_window_size}',
         dag=dag,
     )
 
-    # The task to generate output csv for repeats and neighbours
-    t3 = BashOperator(
-        task_id=f"generate_csvs_{directory}",
-        bash_command=f"python -m astrowaves.tasks.MorphologyCreator --directory {directory}",
-        dag=dag,
-    )
-
-    t1 >> t2 >> t3
-# t1 >>
+    t1 >> t2
