@@ -1,21 +1,21 @@
 version: '3'
 services:
   astro:
-    build: 
+    build:
         context: .
         dockerfile: astro-Dockerfile
     deploy:
       resources:
         limits:
           cpus: '2.0'
-          memory: 12G   
+          memory: 12G
     ports:
       - "8080:8080"
     volumes:
       - .:/app
-      - <path-to-data-directory>:/app/data
+      - ./data:/app/data
     command: webserver
-    
+
   streamlit:
     build:
         context: .
@@ -26,8 +26,8 @@ services:
           cpus: '1.0'
           memory: 3G
     ports:
-      - "8501:8501"
+      - "8502:8501"
     volumes:
       - .:/app
-      - <path-to-data-directory>:/app/data
+      - ./data:/app/data
     command: "streamlit run ./astrowaves/streamlit/dashboard.py -- --path 'data/'"
