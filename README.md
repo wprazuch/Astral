@@ -19,5 +19,7 @@ Astral mnay require some additional Docker configuration, which may be easily do
 ```docker compose build```
 ```docker compose up```
 
+By default, the data directory is in the repo's `data` directory. To change it, modify the `docker-compose.yml` with different volume path.
+
 #### In collaboration with Silesian University of Technology and NeuroScienceLab Essen
 

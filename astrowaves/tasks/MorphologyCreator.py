@@ -148,7 +148,7 @@ class MorphologyCreator:
             vol = self.create_3d_shape(idxs)
             proj = np.sum(vol, axis=2)
             proj[proj > 0] = 1
-            proj = proj.astype(np.int)
+            proj = proj.astype(int)
 
             def circularity_fn(r):
                 return (4 * math.pi * r.area) / (r.perimeter * r.perimeter)
@@ -220,7 +220,7 @@ class MorphologyCreator:
                 vol = self.create_3d_shape(idxs)
                 proj = np.sum(vol, axis=2)
                 proj[proj > 0] = 1
-                proj = proj.astype(np.int)
+                proj = proj.astype(int)
 
                 def circularity_fn(r):
                     return (4 * math.pi * r.area) / (r.perimeter * r.perimeter)
