@@ -115,7 +115,7 @@ pycodestyle==2.5.0
 pydeck==0.3.1
 pyflakes==2.1.1
 Pygments==2.6.1
-PyJWT==1.7.1
+PyJWT==2.4.0
 pykwalify==1.7.0
 pyparsing==2.4.7
 pyradiomics==3.0
