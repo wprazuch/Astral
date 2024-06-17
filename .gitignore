@@ -5,7 +5,6 @@
 /**/*.pyc
 /**/*-checkpoint.ipynb
 \notebooks\wojtek\*.ipynb
-data/**/*
 debug/**/*
 test/test_data/*
 examples

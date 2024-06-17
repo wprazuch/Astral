@@ -62,7 +62,7 @@ for file in files:
     t5 = BashOperator(
         task_id=f"label_waves_{directory}",
         depends_on_past=False,
-        bash_command=f"python -m astrowaves.tasks.WaveLabeller --volume_threshold {volume_threshold} --directory {directory}",
+        bash_command=f"python3.9 -m astrowaves.tasks.WaveLabeller --volume_threshold {volume_threshold} --directory {directory}",
         dag=dag,
     )
 
@@ -70,7 +70,7 @@ for file in files:
     t6 = BashOperator(
         task_id=f"generate_metadata_{directory}",
         depends_on_past=False,
-        bash_command=f"python -m astrowaves.tasks.MetadataGenerator --directory {directory}",
+        bash_command=f"python3.9 -m astrowaves.tasks.MetadataGenerator --directory {directory}",
         dag=dag,
     )
 
@@ -78,7 +78,7 @@ for file in files:
     t7 = BashOperator(
         task_id=f"cleanup_{directory}",
         depends_on_past=False,
-        bash_command=f"python -m astrowaves.tasks.CleanupMetadata --directory {directory}",
+        bash_command=f"python3.9 -m astrowaves.tasks.CleanupMetadata --directory {directory}",
         dag=dag,
     )
 
