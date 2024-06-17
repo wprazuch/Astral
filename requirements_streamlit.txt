@@ -81,7 +81,7 @@ jsonschema==3.2.0
 kiwisolver==1.2.0
 lazy-object-proxy==1.4.3
 lockfile==0.12.2
-Mako==1.1.2
+Mako==1.2.2
 Markdown==2.6.11
 MarkupSafe==1.1.0
 marshmallow==2.21.0
