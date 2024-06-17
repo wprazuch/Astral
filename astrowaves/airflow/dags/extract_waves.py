@@ -61,7 +61,7 @@ for file in files:
     # the task to create a timelapse array from the tiff file
     t1 = BashOperator(
         task_id=f"create_timelapse_{directory}",
-        bash_command=f"python -m astrowaves.tasks.TimelapseCreator --filename {filename} --directory {directory}",
+        bash_command=f"python3.9 -m astrowaves.tasks.TimelapseCreator --filename {filename} --directory {directory}",
         dag=dag,
         weight_rule=WeightRule.UPSTREAM,
     )
@@ -70,7 +70,7 @@ for file in files:
     t3 = BashOperator(
         task_id=f"extract_waves_{directory}",
         depends_on_past=False,
-        bash_command=f"python -m astrowaves.tasks.CalciumWavesExtractor --directory {directory}",
+        bash_command=f"python3.9 -m astrowaves.tasks.CalciumWavesExtractor --directory {directory}",
         dag=dag,
         weight_rule=WeightRule.UPSTREAM,
     )
@@ -82,7 +82,7 @@ for file in files:
     t4 = BashOperator(
         task_id=f"create_masks_{directory}",
         depends_on_past=False,
-        bash_command=f"python -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory} --use_watershed {use_watershed}",
+        bash_command=f"python3.9 -m astrowaves.tasks.MaskGenerator --std {standard_deviation_threshold} --directory {directory} --use_watershed {use_watershed}",
         dag=dag,
         weight_rule=WeightRule.UPSTREAM,
     )

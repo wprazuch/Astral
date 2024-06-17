@@ -65,21 +65,21 @@ for file in files:
     # The task to find neighbours for each event
     t1 = BashOperator(
         task_id=f"find_neighbors_{directory}",
-        bash_command=f"python -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_t {tolerance_t}",
+        bash_command=f"python3.9 -m astrowaves.tasks.NeighbourFinder --directory {directory} --tolerance_xy {tolerance_xy} --tolerance_t {tolerance_t}",
         dag=dag,
     )
 
     # The task to find repeats among neighbour events for a given event
     t2 = BashOperator(
         task_id=f"find_repeats_{directory}",
-        bash_command=f"python -m astrowaves.tasks.RepeatsFinder --directory {directory} --intersect_threshold {intersect_threshold}",
+        bash_command=f"python3.9 -m astrowaves.tasks.RepeatsFinder --directory {directory} --intersect_threshold {intersect_threshold}",
         dag=dag,
     )
 
     # The task to generate output csv for repeats and neighbours
     t3 = BashOperator(
         task_id=f"generate_csvs_{directory}",
-        bash_command=f"python -m astrowaves.tasks.MorphologyCreator --directory {directory}",
+        bash_command=f"python3.9 -m astrowaves.tasks.MorphologyCreator --directory {directory}",
         dag=dag,
     )
 

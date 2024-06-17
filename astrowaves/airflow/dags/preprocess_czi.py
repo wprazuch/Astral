@@ -65,14 +65,14 @@ for file in files:
     # The task for performing f0 correction - either f0 or PAFFT
     t1 = BashOperator(
         task_id=f"correct_intensity_{name}",
-        bash_command=f'python -m astrowaves.tasks.preprocessing.IntensityCorrector perform_intensity_correction "{filename}" --method {intensity_correction_method}',
+        bash_command=f'python3.9 -m astrowaves.tasks.preprocessing.IntensityCorrector perform_intensity_correction "{filename}" --method {intensity_correction_method}',
         dag=dag,
     )
 
     # The task to perform drift correction for the timelapse
     t2 = BashOperator(
         task_id=f"correct_drift_{name}",
-        bash_command=f'python -m astrowaves.tasks.preprocessing.DriftCorrector perform_drift_correction "{tiff_filename}" --window_size {drift_correction_window_size}',
+        bash_command=f'python3.9 -m astrowaves.tasks.preprocessing.DriftCorrector perform_drift_correction "{tiff_filename}" --window_size {drift_correction_window_size}',
         dag=dag,
     )
 
